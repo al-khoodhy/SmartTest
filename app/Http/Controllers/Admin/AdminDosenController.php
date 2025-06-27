@@ -16,13 +16,15 @@ class AdminDosenController extends Controller
     {
         $mataKuliah = \App\Models\MataKuliah::all();
         $mahasiswa = \App\Models\User::where('role_id', 3)->get();
-        return view('admin.dosen.create', compact('mataKuliah', 'mahasiswa'));
+        $kelasList = \App\Models\Kelas::with('mataKuliah')->get();
+        return view('admin.dosen.create', compact('mataKuliah', 'mahasiswa', 'kelasList'));
     }
 
     // Simpan data dosen + relasi mata kuliah
     public function store(Request $request)
     {
-        $request->validate([
+        $kelasMode = $request->input('kelas_mode', 'baru');
+        $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'nim_nip' => 'required|string|unique:users,nim_nip',
@@ -30,11 +32,17 @@ class AdminDosenController extends Controller
             'nama_mk' => 'nullable|string|max:255',
             'kode_mk' => 'nullable|string|max:50',
             'mata_kuliah_id' => 'nullable|exists:mata_kuliah,id',
-            'kelas' => 'required|array|min:1',
-            'kelas.*.nama_kelas' => 'required|string|max:255',
-        ]);
+        ];
+        if ($kelasMode === 'baru') {
+            $rules['kelas'] = 'required|array|min:1';
+            $rules['kelas.*.nama_kelas'] = 'required|string|max:255';
+        } else {
+            $rules['kelas_pilih'] = 'required|array|min:1';
+            $rules['kelas_pilih.*'] = 'exists:kelas,id';
+        }
+        $request->validate($rules);
 
-        DB::transaction(function () use ($request) {
+        DB::transaction(function () use ($request, $kelasMode) {
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -56,13 +64,24 @@ class AdminDosenController extends Controller
                 $user->mataKuliahDiampu()->sync([$mataKuliahId]);
             }
 
-            // Multi kelas
-            foreach ($request->kelas as $kelasData) {
-                $kelas = \App\Models\Kelas::create([
-                    'nama_kelas' => $kelasData['nama_kelas'],
-                    'mata_kuliah_id' => $mataKuliahId,
-                    'dosen_id' => $user->id,
-                ]);
+            if ($kelasMode === 'baru') {
+                // Multi kelas baru
+                foreach ($request->kelas as $kelasData) {
+                    \App\Models\Kelas::create([
+                        'nama_kelas' => $kelasData['nama_kelas'],
+                        'mata_kuliah_id' => $mataKuliahId,
+                        'dosen_id' => $user->id,
+                    ]);
+                }
+            } else {
+                // Assign kelas yang sudah ada ke dosen ini
+                foreach ($request->kelas_pilih as $kelasId) {
+                    $kelas = \App\Models\Kelas::find($kelasId);
+                    if ($kelas) {
+                        $kelas->dosen_id = $user->id;
+                        $kelas->save();
+                    }
+                }
             }
         });
 

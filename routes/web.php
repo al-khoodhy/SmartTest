@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Dosen\DosenController;
 use App\Http\Controllers\Mahasiswa\MahasiswaController;
+use Illuminate\Support\Facades\Auth;
+use TCG\Voyager\Facades\Voyager;
 
 /*
 |--------------------------------------------------------------------------
@@ -96,4 +98,5 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'role:1']], function
     Route::post('/dosen', [\App\Http\Controllers\Admin\AdminDosenController::class, 'store'])->name('admin.dosen.store');
     Route::get('/mahasiswa/create', [\App\Http\Controllers\Admin\AdminMahasiswaController::class, 'create'])->name('admin.mahasiswa.create');
     Route::post('/mahasiswa', [\App\Http\Controllers\Admin\AdminMahasiswaController::class, 'store'])->name('admin.mahasiswa.store');
+    Route::post('/mahasiswa/import', [\App\Http\Controllers\Admin\AdminMahasiswaController::class, 'import'])->name('admin.mahasiswa.import');
 });

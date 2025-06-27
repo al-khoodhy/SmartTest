@@ -143,7 +143,7 @@
                         <hr>
 
                         <div class="form-group mb-0">
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary" onclick="return confirm('Yakin ingin menyimpan tugas ini?')">
                                 <i class="fas fa-save"></i> Simpan Tugas
                             </button>
                             <a href="{{ route('dosen.tugas.index') }}" class="btn btn-secondary">
@@ -155,6 +155,25 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- Modal Konfirmasi Voyager Style -->
+<div class="modal fade" id="voyagerConfirmModal" tabindex="-1" role="dialog" aria-labelledby="voyagerConfirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="voyagerConfirmModalLabel"><i class="voyager-warning"></i> Konfirmasi</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body" id="voyagerConfirmModalBody">
+        Apakah Anda yakin?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-danger" id="voyagerConfirmModalYes">Ya</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -190,7 +209,9 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.remove-soal').forEach(btn => {
             btn.style.display = '';
             btn.onclick = function() {
-                btn.closest('.soal-item').remove();
+                showVoyagerConfirm('Yakin ingin menghapus soal ini?', function() {
+                    btn.closest('.soal-item').remove();
+                });
             };
         });
         // Sembunyikan tombol hapus jika hanya satu soal
@@ -199,6 +220,33 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     updateRemoveButtons();
+
+    // Voyager style confirmation modal
+    var voyagerModal = $('#voyagerConfirmModal');
+    var voyagerModalBody = document.getElementById('voyagerConfirmModalBody');
+    var voyagerModalYes = document.getElementById('voyagerConfirmModalYes');
+    var confirmCallback = null;
+    function showVoyagerConfirm(message, callback) {
+        voyagerModalBody.textContent = message;
+        confirmCallback = callback;
+        voyagerModal.modal('show');
+    }
+    voyagerModalYes.onclick = function() {
+        if(confirmCallback) {
+            confirmCallback();
+            confirmCallback = null;
+            voyagerModal.modal('hide');
+        }
+    };
+
+    // Attach to form submit
+    var formEl = document.querySelector('form[action*="tugas/store"]');
+    if(formEl) {
+        formEl.addEventListener('submit', function(e) {
+            e.preventDefault();
+            showVoyagerConfirm('Yakin ingin menyimpan tugas ini?', () => formEl.submit());
+        });
+    }
 });
 </script>
 @endsection

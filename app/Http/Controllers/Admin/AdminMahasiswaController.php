@@ -51,4 +51,70 @@ class AdminMahasiswaController extends Controller
 
         return redirect()->route('admin.mahasiswa.create')->with('success', 'Mahasiswa berhasil didaftarkan dan di-enroll ke kelas.');
     }
+
+    // Import mahasiswa via CSV
+    public function import(Request $request)
+    {
+        $request->validate([
+            'csv_file' => 'required|file|mimes:csv,txt',
+            'kelas_ids' => 'required|array|min:1',
+            'kelas_ids.*' => 'exists:kelas,id',
+        ]);
+
+        $file = $request->file('csv_file');
+        $rows = array_map('str_getcsv', file($file->getRealPath()));
+        if (empty($rows)) {
+            return back()->withErrors(['csv_file' => 'File CSV kosong atau tidak valid.']);
+        }
+
+        $successCount = 0;
+        $failCount = 0;
+        $failMessages = [];
+
+        DB::beginTransaction();
+        try {
+            foreach ($rows as $i => $row) {
+                if (count($row) < 4) {
+                    $failCount++;
+                    $failMessages[] = "Baris ke-".($i+1).": format tidak sesuai.";
+                    continue;
+                }
+                [$name, $email, $nim, $password] = $row;
+                // Cek email/nim unik
+                if (User::where('email', $email)->exists() || User::where('nim_nip', $nim)->exists()) {
+                    $failCount++;
+                    $failMessages[] = "Baris ke-".($i+1).": email atau NIM sudah terdaftar.";
+                    continue;
+                }
+                $mahasiswa = User::create([
+                    'name' => $name,
+                    'email' => $email,
+                    'nim_nip' => $nim,
+                    'role_id' => 3,
+                    'password' => bcrypt($password),
+                ]);
+                foreach ($request->kelas_ids as $kelasId) {
+                    Enrollment::create([
+                        'mahasiswa_id' => $mahasiswa->id,
+                        'kelas_id' => $kelasId,
+                        'status' => 'active',
+                        'tanggal_daftar' => now(),
+                        'enrolled_at' => now(),
+                    ]);
+                }
+                $successCount++;
+            }
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['csv_file' => 'Terjadi error saat import: ' . $e->getMessage()]);
+        }
+
+        $message = "$successCount mahasiswa berhasil diimport.";
+        if ($failCount > 0) {
+            $message .= " $failCount gagal: ".implode(' ', $failMessages);
+            return back()->with('success', $message)->withErrors(['csv_file' => $message]);
+        }
+        return back()->with('success', $message);
+    }
 } 
