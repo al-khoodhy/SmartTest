@@ -126,7 +126,7 @@
                                                         <h6 class="mb-1">{{ $tugas->judul }}</h6>
                                                         <small>{{ $tugas->created_at->diffForHumans() }}</small>
                                                     </div>
-                                                    <p class="mb-1">{{ $tugas->mataKuliah->nama_mk }}</p>
+                                                    <p class="mb-1">{{ $tugas->kelas && $tugas->kelas->mataKuliah ? $tugas->kelas->mataKuliah->nama_mk : '-' }}</p>
                                                     <small>Deadline: {{ $tugas->deadline->format('d/m/Y H:i') }}</small>
                                                     <div class="mt-2">
                                                         <a href="{{ route('dosen.tugas.show', $tugas) }}" class="btn btn-sm btn-outline-primary">

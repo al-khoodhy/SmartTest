@@ -12,13 +12,21 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->enum('user_role', ['admin', 'dosen', 'mahasiswa'])->default('mahasiswa')->after('email');
-            $table->string('nim_nip', 20)->nullable()->after('user_role');
-            $table->string('phone', 15)->nullable()->after('nim_nip');
-            $table->text('address')->nullable()->after('phone');
-            $table->boolean('is_active')->default(true)->after('address');
-            
-            $table->index(['user_role', 'is_active']);
+            if (Schema::hasColumn('users', 'user_role')) {
+                $table->dropColumn('user_role');
+            }
+            if (Schema::hasColumn('users', 'nim_nip')) {
+                $table->dropColumn('nim_nip');
+            }
+            if (Schema::hasColumn('users', 'phone')) {
+                $table->dropColumn('phone');
+            }
+            if (Schema::hasColumn('users', 'address')) {
+                $table->dropColumn('address');
+            }
+            if (Schema::hasColumn('users', 'is_active')) {
+                $table->dropColumn('is_active');
+            }
         });
     }
 
@@ -28,8 +36,21 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropIndex(['user_role', 'is_active']);
-            $table->dropColumn(['user_role', 'nim_nip', 'phone', 'address', 'is_active']);
+            if (Schema::hasColumn('users', 'user_role')) {
+                $table->dropColumn('user_role');
+            }
+            if (Schema::hasColumn('users', 'nim_nip')) {
+                $table->dropColumn('nim_nip');
+            }
+            if (Schema::hasColumn('users', 'phone')) {
+                $table->dropColumn('phone');
+            }
+            if (Schema::hasColumn('users', 'address')) {
+                $table->dropColumn('address');
+            }
+            if (Schema::hasColumn('users', 'is_active')) {
+                $table->dropColumn('is_active');
+            }
         });
     }
 };

@@ -30,7 +30,6 @@ class AuthenticationTest extends TestCase
         $user = User::factory()->create([
             'email' => 'test@example.com',
             'password' => Hash::make('password123'),
-            'user_role' => 'mahasiswa',
             'is_active' => true
         ]);
 
@@ -89,7 +88,6 @@ class AuthenticationTest extends TestCase
     {
         // Test admin redirect
         $admin = User::factory()->create([
-            'user_role' => 'admin',
             'is_active' => true
         ]);
 
@@ -98,7 +96,6 @@ class AuthenticationTest extends TestCase
 
         // Test dosen redirect
         $dosen = User::factory()->create([
-            'user_role' => 'dosen',
             'is_active' => true
         ]);
 
@@ -107,7 +104,6 @@ class AuthenticationTest extends TestCase
 
         // Test mahasiswa redirect
         $mahasiswa = User::factory()->create([
-            'user_role' => 'mahasiswa',
             'is_active' => true
         ]);
 
@@ -132,8 +128,8 @@ class AuthenticationTest extends TestCase
      */
     public function test_role_middleware_protection(): void
     {
-        $mahasiswa = User::factory()->create(['user_role' => 'mahasiswa']);
-        $dosen = User::factory()->create(['user_role' => 'dosen']);
+        $mahasiswa = User::factory()->create(['role_id' => 3]);
+        $dosen = User::factory()->create(['role_id' => 2]);
 
         // Mahasiswa cannot access dosen routes
         $response = $this->actingAs($mahasiswa)->get('/dosen/dashboard');
@@ -179,7 +175,7 @@ class AuthenticationTest extends TestCase
             'email' => 'test@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
-            'user_role' => 'mahasiswa',
+            'role_id' => 3,
             'nim_nip' => '123456789'
         ];
 
@@ -189,7 +185,7 @@ class AuthenticationTest extends TestCase
         $this->assertDatabaseHas('users', [
             'name' => 'Test User',
             'email' => 'test@example.com',
-            'user_role' => 'mahasiswa',
+            'role_id' => 3,
             'nim_nip' => '123456789'
         ]);
     }

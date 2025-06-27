@@ -26,15 +26,15 @@ class TugasPolicy
             return true;
         }
         
-        // Dosen can view tugas if he is the dosen of the mata kuliah
+        // Dosen can view tugas if he is the dosen of the kelas
         if ($user->isDosen()) {
-            return $tugas->mataKuliah && $tugas->mataKuliah->dosen->contains($user->id);
+            return $tugas->kelas && $tugas->kelas->dosen && $tugas->kelas->dosen->id === $user->id;
         }
         
         // Mahasiswa can view tugas from their enrolled mata kuliah
         if ($user->isMahasiswa()) {
             return $user->enrollments()
-                ->where('mata_kuliah_id', $tugas->mata_kuliah_id)
+                ->where('kelas_id', $tugas->kelas_id)
                 ->where('status', 'active')
                 ->exists();
         }
@@ -60,9 +60,9 @@ class TugasPolicy
             return true;
         }
         
-        // Dosen can update tugas if he is the dosen of the mata kuliah
+        // Dosen can update tugas if he is the dosen of the kelas
         if ($user->isDosen()) {
-            return $tugas->mataKuliah && $tugas->mataKuliah->dosen->contains($user->id);
+            return $tugas->kelas && $tugas->kelas->dosen && $tugas->kelas->dosen->id === $user->id;
         }
         
         return false;
@@ -78,8 +78,8 @@ class TugasPolicy
             return true;
         }
         
-        // Dosen can delete tugas if he is the dosen of the mata kuliah and no submissions yet
-        if ($user->isDosen() && $tugas->mataKuliah && $tugas->mataKuliah->dosen->contains($user->id)) {
+        // Dosen can delete tugas if he is the dosen of the kelas and no submissions yet
+        if ($user->isDosen() && $tugas->kelas && $tugas->kelas->dosen && $tugas->kelas->dosen->id === $user->id) {
             return $tugas->jawabanMahasiswa()->count() === 0;
         }
         

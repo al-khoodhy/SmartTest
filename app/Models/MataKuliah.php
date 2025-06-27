@@ -29,26 +29,6 @@ class MataKuliah extends Model
         return $this->belongsToMany(User::class, 'mata_kuliah_user', 'mata_kuliah_id', 'user_id');
     }
     
-    // Relasi dengan Tugas
-    public function tugas()
-    {
-        return $this->hasMany(Tugas::class, 'mata_kuliah_id');
-    }
-    
-    // Relasi dengan Enrollment
-    public function enrollments()
-    {
-        return $this->hasMany(Enrollment::class, 'mata_kuliah_id');
-    }
-    
-    // Relasi dengan User (Mahasiswa) melalui Enrollment
-    public function mahasiswa()
-    {
-        return $this->belongsToMany(User::class, 'enrollments', 'mata_kuliah_id', 'mahasiswa_id')
-                    ->withPivot('status', 'enrolled_at')
-                    ->withTimestamps();
-    }
-    
     // Relasi ke kelas
     public function kelas()
     {

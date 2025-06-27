@@ -40,7 +40,6 @@ class DatabaseSeeder extends Seeder
             PagesTableSeeder::class,
             PostsTableSeeder::class,
             TranslationsTableSeeder::class,
-            VoyagerDatabaseSeeder::class,
             VoyagerDummyDatabaseSeeder::class,
         ]);
     }

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use TCG\Voyager\Models\Role;
+use Illuminate\Support\Facades\DB;
 
 class RolesTableSeeder extends Seeder
 {
@@ -12,18 +13,16 @@ class RolesTableSeeder extends Seeder
      */
     public function run()
     {
-        $role = Role::firstOrNew(['name' => 'admin']);
-        if (!$role->exists) {
-            $role->fill([
-                'display_name' => __('voyager::seeders.roles.admin'),
-            ])->save();
-        }
-
-        $role = Role::firstOrNew(['name' => 'user']);
-        if (!$role->exists) {
-            $role->fill([
-                'display_name' => __('voyager::seeders.roles.user'),
-            ])->save();
-        }
+        // First, update any existing users to have a default role (admin) to avoid foreign key constraint issues
+        DB::table('users')->update(['role_id' => 1]);
+        
+        // Now we can safely delete and recreate roles
+        DB::table('roles')->delete();
+        DB::table('roles')->insert([
+            ['id' => 1, 'name' => 'admin', 'display_name' => 'Admin'],
+            ['id' => 2, 'name' => 'dosen', 'display_name' => 'Dosen'],
+            ['id' => 3, 'name' => 'mahasiswa', 'display_name' => 'Mahasiswa'],
+            ['id' => 4, 'name' => 'user', 'display_name' => 'User'],
+        ]);
     }
 }

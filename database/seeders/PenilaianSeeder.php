@@ -15,7 +15,7 @@ class PenilaianSeeder extends Seeder
     public function run(): void
     {
         $jawabanList = JawabanMahasiswa::all();
-        $dosen = User::where('user_role', 'dosen')->first();
+        $dosen = User::where('role_id', 2)->first();
 
         foreach ($jawabanList as $jawaban) {
             Penilaian::updateOrCreate([
@@ -34,7 +34,7 @@ class PenilaianSeeder extends Seeder
         }
 
         $jawabanSoalList = JawabanSoalMahasiswa::all();
-        $dosen = User::where('user_role', 'dosen')->first();
+        $dosen = User::where('role_id', 2)->first();
         foreach ($jawabanSoalList as $jawabanSoal) {
             PenilaianSoal::updateOrCreate([
                 'jawaban_soal_id' => $jawabanSoal->id,

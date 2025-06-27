@@ -9,30 +9,6 @@
                     <h4>Kelola Penilaian Tugas</h4>
                 </div>
                 <div class="card-body">
-                    <!-- Filter -->
-                    <form method="GET" class="mb-4">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <select name="mata_kuliah_id" class="form-control">
-                                    <option value="">Semua Mata Kuliah</option>
-                                    @foreach($mataKuliah as $mk)
-                                        <option value="{{ $mk->id }}" {{ request('mata_kuliah_id') == $mk->id ? 'selected' : '' }}>
-                                            {{ $mk->nama_mk }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <button type="submit" class="btn btn-secondary">
-                                    <i class="fas fa-filter"></i> Filter
-                                </button>
-                                <a href="{{ route('dosen.penilaian.index') }}" class="btn btn-outline-secondary">
-                                    <i class="fas fa-times"></i> Reset
-                                </a>
-                            </div>
-                        </div>
-                    </form>
-
                     @if($tugas->count() > 0)
                         <div class="table-responsive">
                             <table class="table table-striped">

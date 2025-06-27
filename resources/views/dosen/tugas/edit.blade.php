@@ -30,17 +30,17 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label for="mata_kuliah_id">Mata Kuliah <span class="text-danger">*</span></label>
-                                    <select class="form-control @error('mata_kuliah_id') is-invalid @enderror" 
-                                            id="mata_kuliah_id" name="mata_kuliah_id" required>
-                                        <option value="">Pilih Mata Kuliah</option>
-                                        @foreach($mataKuliah as $mk)
-                                            <option value="{{ $mk->id }}" {{ old('mata_kuliah_id', $tugas->mata_kuliah_id) == $mk->id ? 'selected' : '' }}>
-                                                {{ $mk->nama_mk }}
+                                    <label for="kelas_id">Kelas <span class="text-danger">*</span></label>
+                                    <select class="form-control @error('kelas_id') is-invalid @enderror" 
+                                            id="kelas_id" name="kelas_id" required>
+                                        <option value="">Pilih Kelas</option>
+                                        @foreach($kelasList as $k)
+                                            <option value="{{ $k->id }}" {{ old('kelas_id', $tugas->kelas_id) == $k->id ? 'selected' : '' }}>
+                                                {{ $k->nama_kelas }}
                                             </option>
                                         @endforeach
                                     </select>
-                                    @error('mata_kuliah_id')
+                                    @error('kelas_id')
                                         <span class="invalid-feedback">{{ $message }}</span>
                                     @enderror
                                 </div>

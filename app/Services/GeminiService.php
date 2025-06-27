@@ -30,6 +30,7 @@ class GeminiService
             ])->post($this->apiUrl . '?key=' . $this->apiKey, [
                 'contents' => [
                     [
+                        'role' => 'user',
                         'parts' => [
                             [
                                 'text' => $prompt
@@ -149,6 +150,7 @@ class GeminiService
             ])->post($this->apiUrl . '?key=' . $this->apiKey, [
                 'contents' => [
                     [
+                        'role' => 'user',
                         'parts' => [
                             [
                                 'text' => 'Hello, this is a test message. Please respond with "Connection successful".'

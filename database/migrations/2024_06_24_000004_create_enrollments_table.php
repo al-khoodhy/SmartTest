@@ -11,7 +11,6 @@ return new class extends Migration
         Schema::create('enrollments', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('mahasiswa_id');
-            $table->unsignedBigInteger('mata_kuliah_id');
             $table->unsignedBigInteger('kelas_id')->nullable();
             $table->enum('status', ['active', 'inactive', 'completed'])->default('active');
             $table->date('enrolled_at');
@@ -19,10 +18,8 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('mahasiswa_id')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('mata_kuliah_id')->references('id')->on('mata_kuliah')->onDelete('cascade');
             $table->foreign('kelas_id')->references('id')->on('kelas')->onDelete('cascade');
-            $table->unique(['mahasiswa_id', 'mata_kuliah_id']);
-            $table->index(['mata_kuliah_id', 'status']);
+            $table->unique(['mahasiswa_id', 'kelas_id']);
         });
     }
 

@@ -13,8 +13,6 @@ return new class extends Migration
             $table->string('judul');
             $table->text('deskripsi');
             $table->text('rubrik_penilaian')->nullable();
-            $table->unsignedBigInteger('mata_kuliah_id');
-            $table->unsignedBigInteger('dosen_id');
             $table->unsignedBigInteger('kelas_id')->nullable();
             $table->datetime('deadline');
             $table->integer('durasi_menit')->default(120);
@@ -23,11 +21,7 @@ return new class extends Migration
             $table->boolean('auto_grade')->default(true);
             $table->timestamps();
 
-            $table->foreign('mata_kuliah_id')->references('id')->on('mata_kuliah')->onDelete('cascade');
-            $table->foreign('dosen_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('kelas_id')->references('id')->on('kelas')->onDelete('cascade');
-            $table->index(['mata_kuliah_id', 'is_active']);
-            $table->index(['dosen_id', 'deadline']);
         });
     }
 

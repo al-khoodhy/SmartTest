@@ -21,11 +21,9 @@ class User extends \TCG\Voyager\Models\User
         'name',
         'email',
         'password',
-        'user_role',
+        'role_id',
         'nim_nip',
-        'phone',
-        'address',
-        'is_active'
+        'is_active',
     ];
 
     /**
@@ -46,7 +44,6 @@ class User extends \TCG\Voyager\Models\User
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
-        'is_active' => 'boolean',
     ];
     
     // Relasi untuk Dosen - Mata Kuliah yang diampu
@@ -65,14 +62,6 @@ class User extends \TCG\Voyager\Models\User
     public function enrollments()
     {
         return $this->hasMany(Enrollment::class, 'mahasiswa_id');
-    }
-    
-    // Relasi untuk Mahasiswa - Mata Kuliah yang diambil
-    public function mataKuliahDiambil()
-    {
-        return $this->belongsToMany(MataKuliah::class, 'enrollments', 'mahasiswa_id', 'mata_kuliah_id')
-                    ->withPivot('status', 'enrolled_at')
-                    ->withTimestamps();
     }
     
     // Relasi untuk Mahasiswa - Jawaban yang dibuat
@@ -102,7 +91,7 @@ class User extends \TCG\Voyager\Models\User
     // Scope untuk role tertentu
     public function scopeByRole($query, $role)
     {
-        return $query->where('user_role', $role);
+        return $query->where('role_id', $role);
     }
     
     // Scope untuk user aktif
@@ -114,19 +103,19 @@ class User extends \TCG\Voyager\Models\User
     // Check apakah user adalah admin
     public function isAdmin()
     {
-        return $this->user_role === 'admin';
+        return $this->role_id == 1;
     }
     
     // Check apakah user adalah dosen
     public function isDosen()
     {
-        return $this->user_role === 'dosen';
+        return $this->role_id == 2;
     }
     
     // Check apakah user adalah mahasiswa
     public function isMahasiswa()
     {
-        return $this->user_role === 'mahasiswa';
+        return $this->role_id == 3;
     }
 
 }

@@ -16,12 +16,12 @@ class DashboardController extends Controller
         $user = auth()->user();
         
         // Redirect berdasarkan role user
-        switch ($user->user_role) {
-            case 'admin':
+        switch ($user->role_id) {
+            case 1:
                 return redirect()->route('voyager.dashboard');
-            case 'dosen':
+            case 2:
                 return redirect()->route('dosen.dashboard');
-            case 'mahasiswa':
+            case 3:
                 return redirect()->route('mahasiswa.dashboard');
             default:
                 auth()->logout();

@@ -209,7 +209,7 @@
                     <div id="sidebar" class="d-md-block">
                         <div class="sidebar-header p-3 border-bottom fw-bold">Menu</div>
                         <ul class="nav flex-column p-2">
-                            @if(Auth::user()->user_role == 'dosen')
+                            @if(Auth::user()->role_id == 2)
                                 <li class="nav-item">
                                     <a class="nav-link {{ request()->routeIs('dosen.dashboard') ? 'active' : '' }}" href="{{ route('dosen.dashboard') }}">
                                         <i class="bi bi-speedometer2"></i> Dashboard Dosen
@@ -225,7 +225,7 @@
                                         <i class="bi bi-clipboard-check"></i> Penilaian
                                     </a>
                                 </li>
-                            @elseif(Auth::user()->user_role == 'mahasiswa')
+                            @elseif(Auth::user()->role_id == 3)
                                 <li class="nav-item">
                                     <a class="nav-link {{ request()->routeIs('mahasiswa.dashboard') ? 'active' : '' }}" href="{{ route('mahasiswa.dashboard') }}">
                                         <i class="bi bi-speedometer"></i> Dashboard Mahasiswa
@@ -326,5 +326,6 @@
             }
         });
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

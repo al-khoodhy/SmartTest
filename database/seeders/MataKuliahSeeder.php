@@ -53,7 +53,7 @@ class MataKuliahSeeder extends Seeder
         ];
         $mkIds = [];
         foreach ($mataKuliahData as $i => $mk) {
-            $mataKuliah = MataKuliah::create($mk);
+            $mataKuliah = MataKuliah::updateOrCreate($mk);
             $mkIds[] = $mataKuliah->id;
         }
         // Assign dosen ke mata kuliah via pivot

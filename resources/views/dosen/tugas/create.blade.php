@@ -13,6 +13,15 @@
                 </div>
 
                 <div class="card-body">
+                    @if ($errors->any())
+                        <div class="alert alert-danger">
+                            <ul>
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
                     <form method="POST" action="{{ route('dosen.tugas.store') }}">
                         @csrf
 
@@ -23,23 +32,6 @@
                                     <input type="text" class="form-control @error('judul') is-invalid @enderror" 
                                            id="judul" name="judul" value="{{ old('judul') }}" required>
                                     @error('judul')
-                                        <span class="invalid-feedback">{{ $message }}</span>
-                                    @enderror
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="mata_kuliah_id">Mata Kuliah <span class="text-danger">*</span></label>
-                                    <select class="form-control @error('mata_kuliah_id') is-invalid @enderror" 
-                                            id="mata_kuliah_id" name="mata_kuliah_id" required>
-                                        <option value="">Pilih Mata Kuliah</option>
-                                        @foreach($mataKuliah as $mk)
-                                            <option value="{{ $mk->id }}" {{ old('mata_kuliah_id') == $mk->id ? 'selected' : '' }}>
-                                                {{ $mk->nama_mk }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @error('mata_kuliah_id')
                                         <span class="invalid-feedback">{{ $message }}</span>
                                     @enderror
                                 </div>

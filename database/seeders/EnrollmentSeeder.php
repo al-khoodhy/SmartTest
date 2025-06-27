@@ -12,7 +12,7 @@ class EnrollmentSeeder extends Seeder
 {
     public function run(): void
     {
-        $mahasiswa = User::where('user_role', 'mahasiswa')->get();
+        $mahasiswa = User::where('role_id', 3)->get();
         $kelasList = Kelas::all();
 
         foreach ($mahasiswa as $mhs) {
@@ -22,9 +22,8 @@ class EnrollmentSeeder extends Seeder
                 $kelas = Kelas::find($kelasId);
                 Enrollment::updateOrCreate([
                     'mahasiswa_id' => $mhs->id,
-                    'mata_kuliah_id' => $kelas->mata_kuliah_id,
-                ], [
                     'kelas_id' => $kelas->id,
+                ], [
                     'status' => 'active',
                     'tanggal_daftar' => now()->subDays(rand(1, 30)),
                     'enrolled_at' => now()->subDays(rand(1, 30)),

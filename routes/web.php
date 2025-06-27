@@ -28,7 +28,7 @@ Auth::routes();
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
 // Dosen routes
-Route::prefix('dosen')->name('dosen.')->middleware(['auth', 'role:dosen'])->group(function () {
+Route::prefix('dosen')->name('dosen.')->middleware(['auth', 'role:2'])->group(function () {
     Route::get('/dashboard', [DosenController::class, 'dashboard'])->name('dashboard');
     
     // Tugas routes
@@ -51,7 +51,7 @@ Route::prefix('dosen')->name('dosen.')->middleware(['auth', 'role:dosen'])->grou
 });
 
 // Mahasiswa routes
-Route::prefix('mahasiswa')->name('mahasiswa.')->middleware(['auth', 'role:mahasiswa'])->group(function () {
+Route::prefix('mahasiswa')->name('mahasiswa.')->middleware(['auth', 'role:3'])->group(function () {
     Route::get('/dashboard', [MahasiswaController::class, 'dashboard'])->name('dashboard');
     
     // Tugas routes
@@ -67,7 +67,7 @@ Route::prefix('mahasiswa')->name('mahasiswa.')->middleware(['auth', 'role:mahasi
         Route::get('/{jawaban}/work', [\App\Http\Controllers\Mahasiswa\UjianController::class, 'work'])->name('work');
         Route::post('/{jawaban}/save-draft', [\App\Http\Controllers\Mahasiswa\UjianController::class, 'saveDraft'])->name('save-draft');
         Route::post('/{jawaban}/submit', [\App\Http\Controllers\Mahasiswa\UjianController::class, 'submit'])->name('submit');
-        Route::get('/{jawaban}/remaining-time', [\App\Http\Controllers\Mahasiswa\UjianController::class, 'getRemainingTime'])->name('remaining-time');
+        Route::get('/{jawaban}/get-remaining-time', [\App\Http\Controllers\Mahasiswa\UjianController::class, 'getRemainingTime'])->name('get-remaining-time');
     });
     
     // Nilai routes
@@ -90,8 +90,10 @@ Auth::routes();
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
-Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'role:admin']], function () {
+Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'role:1']], function () {
     // Pendaftaran Dosen + Mata Kuliah
     Route::get('/dosen/create', [\App\Http\Controllers\Admin\AdminDosenController::class, 'create'])->name('admin.dosen.create');
     Route::post('/dosen', [\App\Http\Controllers\Admin\AdminDosenController::class, 'store'])->name('admin.dosen.store');
+    Route::get('/mahasiswa/create', [\App\Http\Controllers\Admin\AdminMahasiswaController::class, 'create'])->name('admin.mahasiswa.create');
+    Route::post('/mahasiswa', [\App\Http\Controllers\Admin\AdminMahasiswaController::class, 'store'])->name('admin.mahasiswa.store');
 });

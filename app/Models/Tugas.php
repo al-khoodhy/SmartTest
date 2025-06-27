@@ -16,8 +16,7 @@ class Tugas extends Model
         'judul',
         'deskripsi',
         'rubrik_penilaian',
-        'mata_kuliah_id',
-        'dosen_id',
+        'kelas_id',
         'deadline',
         'durasi_menit',
         'nilai_maksimal',
@@ -31,18 +30,6 @@ class Tugas extends Model
         'auto_grade' => 'boolean',
     ];
     
-    // Relasi dengan MataKuliah
-    public function mataKuliah()
-    {
-        return $this->belongsTo(MataKuliah::class, 'mata_kuliah_id');
-    }
-    
-    // Relasi dengan User (Dosen)
-    public function dosen()
-    {
-        return $this->belongsTo(User::class, 'dosen_id');
-    }
-    
     // Relasi dengan JawabanMahasiswa
     public function jawabanMahasiswa()
     {
@@ -53,6 +40,12 @@ class Tugas extends Model
     public function kelas()
     {
         return $this->belongsTo(Kelas::class, 'kelas_id');
+    }
+    
+    // Accessor agar $tugas->mataKuliah langsung instance MataKuliah
+    public function getMataKuliahAttribute()
+    {
+        return $this->kelas && $this->kelas->mataKuliah ? $this->kelas->mataKuliah : null;
     }
     
     // Relasi ke Soal
@@ -91,5 +84,23 @@ class Tugas extends Model
         }
         
         return 'active';
+    }
+    
+    // Relasi ke dosen melalui kelas
+    // public function dosen()
+    // {
+    //     return $this->kelas ? $this->kelas->dosen() : null;
+    // }
+    // Relasi ke dosen via kelas
+    public function dosen()
+    {
+        return $this->hasOneThrough(
+            \App\Models\User::class,
+            \App\Models\Kelas::class,
+            'id', // Foreign key on kelas table...
+            'id', // Foreign key on users table...
+            'kelas_id', // Local key on tugas table...
+            'dosen_id' // Local key on kelas table...
+        );
     }
 }

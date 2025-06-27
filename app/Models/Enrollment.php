@@ -11,9 +11,10 @@ class Enrollment extends Model
     
     protected $fillable = [
         'mahasiswa_id',
-        'mata_kuliah_id',
+        'kelas_id',
         'status',
-        'enrolled_at'
+        'enrolled_at',
+        'tanggal_daftar',
     ];
     
     protected $casts = [
@@ -24,12 +25,6 @@ class Enrollment extends Model
     public function mahasiswa()
     {
         return $this->belongsTo(User::class, 'mahasiswa_id');
-    }
-    
-    // Relasi dengan MataKuliah
-    public function mataKuliah()
-    {
-        return $this->belongsTo(MataKuliah::class, 'mata_kuliah_id');
     }
     
     // Relasi ke kelas

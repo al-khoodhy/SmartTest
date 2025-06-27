@@ -20,8 +20,6 @@ class TugasSeeder extends Seeder
                     'judul' => 'Tugas ' . $i . ' - ' . $kelas->nama_kelas,
                     'deskripsi' => 'Deskripsi tugas ' . $i . ' untuk ' . $kelas->nama_kelas,
                     'rubrik_penilaian' => null,
-                    'mata_kuliah_id' => $kelas->mata_kuliah_id,
-                    'dosen_id' => $kelas->dosen_id,
                     'kelas_id' => $kelas->id,
                     'deadline' => Carbon::now()->addDays(rand(7, 30)),
                     'durasi_menit' => 120,

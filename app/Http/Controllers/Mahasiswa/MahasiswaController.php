@@ -13,33 +13,33 @@ class MahasiswaController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'role:mahasiswa']);
+        $this->middleware(['auth', 'role:3']);
     }
     
     public function dashboard()
     {
         $mahasiswa = auth()->user();
-        
-        // Statistik untuk dashboard
-        $totalMataKuliah = $mahasiswa->enrollments()->active()->count();
-        $tugasTerbaru = $this->getTugasAktif($mahasiswa)
-            ->with(['mataKuliah', 'dosen'])
+        $kelasIds = $mahasiswa->enrollments()->active()->pluck('kelas_id');
+        $tugasTerbaru = \App\Models\Tugas::whereIn('kelas_id', $kelasIds)
+            ->with('kelas.mataKuliah')
+            ->active()
+            ->available()
+            ->latest()
             ->take(5)
             ->get();
         $tugasTersedia = $tugasTerbaru->count();
         $tugasSelesai = $mahasiswa->jawabanMahasiswa()->whereIn('status', ['submitted', 'graded'])->count();
-        // Rata-rata nilai
         $rataRataNilai = $mahasiswa->jawabanMahasiswa()
             ->whereHas('penilaian')
             ->join('penilaian', 'jawaban_mahasiswa.id', '=', 'penilaian.jawaban_id')
             ->avg('penilaian.nilai_final') ?? 0;
-        // Nilai terbaru
         $nilaiTerbaru = $mahasiswa->jawabanMahasiswa()
-            ->with(['tugas.mataKuliah', 'penilaian'])
+            ->with(['tugas.kelas.mataKuliah', 'penilaian'])
             ->whereHas('penilaian')
             ->latest()
             ->take(5)
             ->get();
+        $totalMataKuliah = \App\Models\Kelas::whereIn('id', $kelasIds)->distinct('mata_kuliah_id')->count('mata_kuliah_id');
         return view('mahasiswa.dashboard', compact(
             'totalMataKuliah',
             'tugasTersedia',
@@ -52,16 +52,9 @@ class MahasiswaController extends Controller
     
     private function getTugasAktif($mahasiswa)
     {
-        // Get mata kuliah yang diambil mahasiswa
-        $mataKuliahIds = $mahasiswa->enrollments()
-            ->active()
-            ->pluck('mata_kuliah_id');
-        
-        // Get tugas yang belum dikerjakan
-        $tugasDikerjakan = $mahasiswa->jawabanMahasiswa()
-            ->pluck('tugas_id');
-        
-        return Tugas::whereIn('mata_kuliah_id', $mataKuliahIds)
+        $kelasIds = $mahasiswa->enrollments()->active()->pluck('kelas_id');
+        $tugasDikerjakan = $mahasiswa->jawabanMahasiswa()->pluck('tugas_id');
+        return Tugas::whereIn('kelas_id', $kelasIds)
             ->active()
             ->available()
             ->whereNotIn('id', $tugasDikerjakan);

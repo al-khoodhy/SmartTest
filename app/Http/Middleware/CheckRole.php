@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Log;
 
 class CheckRole
 {
@@ -22,14 +23,16 @@ class CheckRole
         
         $user = auth()->user();
         
-        // Check if user is active
-        if (!$user->is_active) {
-            auth()->logout();
-            return redirect()->route('login')->with('error', 'Akun Anda tidak aktif. Silakan hubungi administrator.');
-        }
+        // Debug log untuk role
+        Log::info('ROLE DEBUG', [
+            'user_id' => $user->id,
+            'role_id' => $user->role_id,
+            'roles' => $roles,
+            'roles_int' => array_map('intval', $roles),
+        ]);
         
         // Check if user has required role
-        if (!empty($roles) && !in_array($user->user_role, $roles)) {
+        if (!empty($roles) && !in_array((int)$user->role_id, array_map('intval', $roles))) {
             abort(403, 'Anda tidak memiliki akses untuk halaman ini.');
         }
         

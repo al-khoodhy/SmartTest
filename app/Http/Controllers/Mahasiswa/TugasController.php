@@ -1,4 +1,4 @@
-.<?php
+<?php
 
 namespace App\Http\Controllers\Mahasiswa;
 
@@ -13,7 +13,7 @@ class TugasController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'role:mahasiswa']);
+        $this->middleware(['auth', 'role:3']);
     }
     
     /**
@@ -24,17 +24,15 @@ class TugasController extends Controller
         $mahasiswa = auth()->user();
         
         // Get mata kuliah yang diambil mahasiswa
-        $mataKuliahIds = $mahasiswa->enrollments()
-            ->active()
-            ->pluck('mata_kuliah_id');
+        $kelasIds = $mahasiswa->enrollments()->active()->pluck('kelas_id');
         
-        $query = Tugas::whereIn('mata_kuliah_id', $mataKuliahIds)
-            ->with(['mataKuliah', 'dosen'])
+        $query = Tugas::whereIn('kelas_id', $kelasIds)
+            ->with('kelas.mataKuliah')
             ->active();
         
         // Filter berdasarkan mata kuliah
-        if ($request->mata_kuliah_id) {
-            $query->where('mata_kuliah_id', $request->mata_kuliah_id);
+        if ($request->kelas_id) {
+            $query->where('kelas_id', $request->kelas_id);
         }
         
         // Filter berdasarkan status
@@ -72,7 +70,7 @@ class TugasController extends Controller
         $tugas = $query->latest()->paginate(10);
         
         // Get mata kuliah untuk filter
-        $mataKuliah = MataKuliah::whereIn('id', $mataKuliahIds)->active()->get();
+        $mataKuliah = MataKuliah::whereIn('id', $kelasIds)->active()->get();
         
         // Get status jawaban untuk setiap tugas
         $jawabanStatus = [];
@@ -97,7 +95,7 @@ class TugasController extends Controller
         
         // Check apakah mahasiswa terdaftar di mata kuliah ini
         $isEnrolled = $mahasiswa->enrollments()
-            ->where('mata_kuliah_id', $tugas->mata_kuliah_id)
+            ->where('kelas_id', $tugas->kelas_id)
             ->where('status', 'active')
             ->exists();
         
@@ -105,7 +103,7 @@ class TugasController extends Controller
             abort(403, 'Anda tidak terdaftar di mata kuliah ini.');
         }
         
-        $tugas->load(['mataKuliah', 'dosen']);
+        $tugas->load(['kelas']);
         
         // Get jawaban mahasiswa jika ada
         $jawaban = $mahasiswa->jawabanMahasiswa()
@@ -131,7 +129,7 @@ class TugasController extends Controller
         
         // Check apakah mahasiswa terdaftar di mata kuliah ini
         $isEnrolled = $mahasiswa->enrollments()
-            ->where('mata_kuliah_id', $tugas->mata_kuliah_id)
+            ->where('kelas_id', $tugas->kelas_id)
             ->where('status', 'active')
             ->exists();
         

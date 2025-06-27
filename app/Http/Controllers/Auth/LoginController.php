@@ -41,15 +41,12 @@ class LoginController extends Controller
     protected function redirectTo()
     {
         $user = auth()->user();
-        // Semua role diarahkan ke /home
-        if ($user->user_role === 'dosen' || $user->user_role === 'mahasiswa') {
+        if ($user->role_id == 2 || $user->role_id == 3) {
             return '/home';
         }
-        // Admin tetap ke /admin
-        if ($user->user_role === 'admin') {
+        if ($user->role_id == 1) {
             return '/admin';
         }
-        // Default fallback
         return '/home';
     }
 }

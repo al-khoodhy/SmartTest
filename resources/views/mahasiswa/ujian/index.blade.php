@@ -38,11 +38,14 @@
                                             </td>
                                             <td>
                                                 @if(!$u->jawaban && $u->deadline >= now())
-                                                    <a href="{{ route('mahasiswa.ujian.work', $u) }}" class="btn btn-sm btn-success" title="Mulai Ujian">
-                                                        <i class="bi bi-play-circle"></i> Mulai
-                                                    </a>
+                                                    <form action="{{ route('mahasiswa.tugas.start', $u) }}" method="POST" style="display:inline;">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-sm btn-success" title="Mulai Ujian">
+                                                            <i class="bi bi-play-circle"></i> Mulai
+                                                        </button>
+                                                    </form>
                                                 @elseif($u->jawaban && $u->jawaban->status === 'draft')
-                                                    <a href="{{ route('mahasiswa.ujian.work', $u) }}" class="btn btn-sm btn-warning" title="Lanjutkan Ujian">
+                                                    <a href="{{ route('mahasiswa.ujian.work', $u->jawaban) }}" class="btn btn-sm btn-warning" title="Lanjutkan Ujian">
                                                         <i class="bi bi-pencil-square"></i> Lanjutkan
                                                     </a>
                                                 @elseif($u->jawaban && $u->jawaban->status === 'submitted')

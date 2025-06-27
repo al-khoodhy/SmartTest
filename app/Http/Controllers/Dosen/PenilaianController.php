@@ -16,7 +16,7 @@ class PenilaianController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'role:dosen']);
+        $this->middleware(['auth', 'role:2']);
     }
     
     /**
@@ -25,31 +25,22 @@ class PenilaianController extends Controller
     public function index(Request $request)
     {
         $dosen = auth()->user();
-        // Get tugas yang dibuat dosen (melalui mata kuliah)
-        $tugasQuery = \App\Models\Tugas::whereHas('mataKuliah', function($q) use ($dosen) {
+        $tugasQuery = \App\Models\Tugas::whereHas('kelas', function($q) use ($dosen) {
             $q->where('dosen_id', $dosen->id);
-        })->with('mataKuliah');
-        if ($request->mata_kuliah_id) {
-            $tugasQuery->where('mata_kuliah_id', $request->mata_kuliah_id);
+        })->with('kelas.mataKuliah');
+        if ($request->kelas_id) {
+            $tugasQuery->where('kelas_id', $request->kelas_id);
         }
         $tugas = $tugasQuery->latest()->paginate(10);
-        // Get mata kuliah untuk filter dropdown
-        $mataKuliah = \App\Models\MataKuliah::whereHas('dosen', function($q) use ($dosen) {
-            $q->where('users.id', $dosen->id);
-        })->where('is_active', true)->get();
-        // Statistik penilaian
-        $totalJawaban = \App\Models\JawabanMahasiswa::whereHas('tugas', function($query) use ($dosen) {
-            $query->whereHas('mataKuliah', function($q) use ($dosen) {
-                $q->where('dosen_id', $dosen->id);
-            });
+        $kelas = \App\Models\Kelas::where('dosen_id', $dosen->id)->with('mataKuliah')->get();
+        $totalJawaban = \App\Models\JawabanMahasiswa::whereHas('tugas.kelas', function($q) use ($dosen) {
+            $q->where('dosen_id', $dosen->id);
         })->where('status', 'submitted')->count();
-        $sudahDinilai = \App\Models\JawabanMahasiswa::whereHas('tugas', function($query) use ($dosen) {
-            $query->whereHas('mataKuliah', function($q) use ($dosen) {
-                $q->where('dosen_id', $dosen->id);
-            });
+        $sudahDinilai = \App\Models\JawabanMahasiswa::whereHas('tugas.kelas', function($q) use ($dosen) {
+            $q->where('dosen_id', $dosen->id);
         })->where('status', 'graded')->count();
         $menungguPenilaian = $totalJawaban - $sudahDinilai;
-        return view('dosen.penilaian.index', compact('tugas', 'mataKuliah', 'totalJawaban', 'sudahDinilai', 'menungguPenilaian'));
+        return view('dosen.penilaian.index', compact('tugas', 'kelas', 'totalJawaban', 'sudahDinilai', 'menungguPenilaian'));
     }
     
     /**
@@ -214,11 +205,10 @@ class PenilaianController extends Controller
             $file = fopen('php://output', 'w');
             
             // Header CSV
-            fputcsv($file, ['NIM', 'Nama Mahasiswa', 'Nilai AI', 'Nilai Manual', 'Nilai Final', 'Status', 'Tanggal Submit']);
+            fputcsv($file, ['Nama Mahasiswa', 'Nilai AI', 'Nilai Manual', 'Nilai Final', 'Status', 'Tanggal Submit']);
             
             foreach ($jawaban as $j) {
                 fputcsv($file, [
-                    $j->mahasiswa->nim_nip,
                     $j->mahasiswa->name,
                     $j->penilaian->nilai_ai ?? '-',
                     $j->penilaian->nilai_manual ?? '-',

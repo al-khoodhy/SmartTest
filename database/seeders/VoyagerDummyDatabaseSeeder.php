@@ -14,12 +14,12 @@ class VoyagerDummyDatabaseSeeder extends Seeder
     public function run()
     {
         $this->call([
+            // Only seed dummy content that hasn't been seeded yet
             CategoriesTableSeeder::class,
-            UsersTableSeeder::class,
             PostsTableSeeder::class,
             PagesTableSeeder::class,
             TranslationsTableSeeder::class,
-            PermissionRoleTableSeeder::class,
+            // Removed UsersTableSeeder and PermissionRoleTableSeeder to avoid duplicates
         ]);
     }
 }

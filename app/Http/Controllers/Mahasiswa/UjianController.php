@@ -13,7 +13,7 @@ class UjianController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'role:mahasiswa']);
+        $this->middleware(['auth', 'role:3']);
     }
     
     /**
@@ -34,7 +34,7 @@ class UjianController extends Controller
                 ->with('error', 'Jawaban sudah disubmit dan tidak bisa diubah.');
         }
         
-        $jawaban->load(['tugas.mataKuliah', 'tugas.dosen', 'tugas.soal', 'jawabanSoal']);
+        $jawaban->load(['tugas.kelas.mataKuliah', 'tugas.dosen', 'tugas.soal', 'jawabanSoal']);
         
         // Check deadline
         if ($jawaban->tugas->deadline <= Carbon::now()) {
@@ -83,16 +83,30 @@ class UjianController extends Controller
             return response()->json(['error' => 'Waktu ujian sudah habis'], 400);
         }
         
-        $data = $request->input('jawaban_soal', []);
+        // Handle both old and new format
+        $jawabanSoalData = $request->input('jawaban_soal');
+        
+        // If it's JSON string, decode it
+        if (is_string($jawabanSoalData)) {
+            $jawabanSoalData = json_decode($jawabanSoalData, true);
+        }
+        
+        // If it's still not an array, try to get it from request
+        if (!is_array($jawabanSoalData)) {
+            $jawabanSoalData = $request->input('jawaban_soal', []);
+        }
+        
         foreach ($jawaban->tugas->soal as $soal) {
-            $jawab = $data[$soal->id] ?? '';
+            $jawab = $jawabanSoalData[$soal->id] ?? '';
             $jawabanSoal = $jawaban->jawabanSoal()->firstOrNew(['soal_id' => $soal->id]);
             $jawabanSoal->jawaban = $jawab;
             $jawabanSoal->status = 'draft';
             $jawabanSoal->save();
         }
+        
         $jawaban->updated_at = Carbon::now();
         $jawaban->save();
+        
         return response()->json([
             'success' => true,
             'message' => 'Draft berhasil disimpan',
@@ -121,11 +135,11 @@ class UjianController extends Controller
         $data = $request->input('jawaban_soal', []);
         $rules = [];
         foreach ($jawaban->tugas->soal as $soal) {
-            $rules['jawaban_soal.' . $soal->id] = 'required|string|min:50';
+            $rules['jawaban_soal.' . $soal->id] = 'required|string|min:20';
         }
         $rules['confirm_submit'] = 'required|accepted';
         $validator = Validator::make($request->all(), $rules, [
-            'jawaban_soal.*.min' => 'Jawaban minimal 50 karakter.',
+            'jawaban_soal.*.min' => 'Jawaban minimal 20 karakter.',
             'confirm_submit.accepted' => 'Anda harus mengkonfirmasi submit jawaban.'
         ]);
         if ($validator->fails()) {
@@ -139,7 +153,15 @@ class UjianController extends Controller
             $jawabanSoal->waktu_selesai = Carbon::now();
             $jawabanSoal->save();
         }
+        // Gabungkan semua jawaban soal untuk field jawaban utama
+        $allJawaban = [];
+        foreach ($jawaban->tugas->soal as $soal) {
+            $allJawaban[] = ($data[$soal->id] ?? '');
+        }
+        $jawaban->jawaban = implode("\n\n", $allJawaban);
+        // Hitung durasi detik
         $jawaban->waktu_selesai = Carbon::now();
+        $jawaban->durasi_detik = $jawaban->waktu_mulai ? $jawaban->waktu_mulai->diffInSeconds($jawaban->waktu_selesai) : null;
         $jawaban->status = 'submitted';
         $jawaban->save();
         if ($jawaban->tugas->auto_grade) {
@@ -209,17 +231,21 @@ class UjianController extends Controller
     public function index(Request $request)
     {
         $mahasiswa = auth()->user();
-        // Ambil mata kuliah yang diambil mahasiswa
-        $mataKuliahIds = $mahasiswa->enrollments()->active()->pluck('mata_kuliah_id');
-        // Ambil daftar ujian (misal: tugas yang bertipe ujian, atau model Ujian jika ada)
-        $ujian = \App\Models\Tugas::whereIn('mata_kuliah_id', $mataKuliahIds)
-            ->with(['mataKuliah', 'dosen'])
+        
+        // Ambil kelas yang diambil mahasiswa melalui enrollment
+        $kelasIds = $mahasiswa->enrollments()->active()->pluck('kelas_id');
+        
+        // Ambil daftar ujian (tugas) berdasarkan kelas
+        $ujian = \App\Models\Tugas::whereIn('kelas_id', $kelasIds)
+            ->with(['kelas.mataKuliah', 'dosen'])
             ->orderByDesc('deadline')
             ->paginate(10);
+            
         // Untuk setiap ujian, ambil jawaban mahasiswa jika ada
         foreach ($ujian as $u) {
             $u->jawaban = $mahasiswa->jawabanMahasiswa()->where('tugas_id', $u->id)->first();
         }
+        
         return view('mahasiswa.ujian.index', compact('ujian'));
     }
 }

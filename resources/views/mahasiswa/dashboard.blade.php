@@ -7,7 +7,7 @@
             <div class="card">
                 <div class="card-header">
                     <h4>Dashboard Mahasiswa</h4>
-                    <p class="mb-0">Selamat datang, {{ auth()->user()->name }} ({{ auth()->user()->nim_nip }})</p>
+                    <p class="mb-0">Selamat datang, {{ auth()->user()->name }}</p>
                 </div>
 
                 <div class="card-body">

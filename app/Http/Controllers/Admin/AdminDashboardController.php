@@ -26,9 +26,9 @@ class AdminDashboardController extends Controller
     {
         // User statistics
         $totalUsers = User::count();
-        $totalAdmin = User::where('user_role', 'admin')->count();
-        $totalDosen = User::where('user_role', 'dosen')->count();
-        $totalMahasiswa = User::where('user_role', 'mahasiswa')->count();
+        $totalAdmin = User::where('role_id', 'admin')->count();
+        $totalDosen = User::where('role_id', 'dosen')->count();
+        $totalMahasiswa = User::where('role_id', 'mahasiswa')->count();
         $activeUsers = User::where('is_active', true)->count();
         
         // Academic statistics
@@ -53,12 +53,12 @@ class AdminDashboardController extends Controller
         $avgNilai = Penilaian::avg('nilai_final');
         
         // Recent activities
-        $recentTugas = Tugas::with(['mataKuliah', 'dosen'])
+        $recentTugas = Tugas::with(['kelas.mataKuliah'])
             ->latest()
             ->take(5)
             ->get();
             
-        $recentJawaban = JawabanMahasiswa::with(['tugas.mataKuliah', 'mahasiswa'])
+        $recentJawaban = JawabanMahasiswa::with(['tugas.kelas.mataKuliah', 'mahasiswa'])
             ->whereIn('status', ['submitted', 'graded'])
             ->latest()
             ->take(5)
@@ -167,17 +167,17 @@ class AdminDashboardController extends Controller
     
     private function getUsersReport()
     {
-        $users = User::with(['enrollments.mataKuliah'])
+        $users = User::with(['enrollments.kelas.mataKuliah'])
             ->withCount(['jawabanMahasiswa', 'tugasDibuat'])
             ->get()
-            ->groupBy('user_role');
+            ->groupBy('role_id');
             
         return view('admin.reports.users', compact('users'));
     }
     
     private function getAssignmentsReport()
     {
-        $tugas = Tugas::with(['mataKuliah', 'dosen'])
+        $tugas = Tugas::with(['kelas.mataKuliah', 'dosen'])
             ->withCount(['jawabanMahasiswa'])
             ->get();
             
@@ -186,10 +186,10 @@ class AdminDashboardController extends Controller
     
     private function getGradingReport()
     {
-        $penilaian = Penilaian::with(['jawaban.tugas.mataKuliah', 'jawaban.mahasiswa'])
+        $penilaian = Penilaian::with(['jawaban.tugas.kelas.mataKuliah', 'jawaban.mahasiswa'])
             ->get();
             
-        $avgByMataKuliah = $penilaian->groupBy('jawaban.tugas.mata_kuliah_id')
+        $avgByMataKuliah = $penilaian->groupBy('jawaban.tugas.kelas.mata_kuliah_id')
             ->map(function ($group) {
                 return [
                     'mata_kuliah' => $group->first()->jawaban->tugas->mataKuliah->nama_mk,

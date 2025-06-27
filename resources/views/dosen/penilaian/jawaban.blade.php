@@ -31,17 +31,28 @@
                         </dd>
                         <dt class="col-sm-4">Jawaban Mahasiswa</dt>
                         <dd class="col-sm-8"><div class="border p-2 bg-light">{!! nl2br(e($jawaban->jawaban)) !!}</div></dd>
+                        <dt class="col-sm-4">Jawaban Per Soal</dt>
+                        <dd class="col-sm-8">
+                            <ol>
+                                @foreach($jawaban->jawabanSoal as $jawabanSoal)
+                                    <li class="mb-2">
+                                        <div><strong>Pertanyaan:</strong> {{ $jawabanSoal->soal->pertanyaan ?? '-' }}</div>
+                                        <div><strong>Jawaban:</strong> {!! nl2br(e($jawabanSoal->jawaban)) !!}</div>
+                                        @if($jawabanSoal->penilaian)
+                                            <div><strong>Nilai Manual:</strong> {{ $jawabanSoal->penilaian->nilai_manual ?? '-' }}</div>
+                                            <div><strong>Feedback Manual:</strong> {{ $jawabanSoal->penilaian->feedback_manual ?? '-' }}</div>
+                                        @endif
+                                    </li>
+                                @endforeach
+                            </ol>
+                        </dd>
                         @if($jawaban->penilaian)
                             <dt class="col-sm-4">Nilai AI</dt>
                             <dd class="col-sm-8">{{ $jawaban->penilaian->nilai_ai ?? '-' }}</dd>
-                            <dt class="col-sm-4">Nilai Manual</dt>
-                            <dd class="col-sm-8">{{ $jawaban->penilaian->nilai_manual ?? '-' }}</dd>
                             <dt class="col-sm-4">Nilai Final</dt>
                             <dd class="col-sm-8">{{ $jawaban->penilaian->nilai_final ?? '-' }}</dd>
                             <dt class="col-sm-4">Feedback AI</dt>
                             <dd class="col-sm-8">{{ $jawaban->penilaian->feedback_ai ?? '-' }}</dd>
-                            <dt class="col-sm-4">Feedback Manual</dt>
-                            <dd class="col-sm-8">{{ $jawaban->penilaian->feedback_manual ?? '-' }}</dd>
                         @endif
                         @if($jawaban->status === 'graded')
                             <div class="alert alert-success">

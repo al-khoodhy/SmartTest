@@ -16,14 +16,14 @@ class TugasFactory extends Factory
      */
     public function definition(): array
     {
-        $dosen = \App\Models\User::factory()->create(['user_role' => 'dosen']);
+        $dosen = \App\Models\User::factory()->create(['role_id' => 2]);
         $mataKuliah = \App\Models\MataKuliah::factory()->create(['dosen_id' => $dosen->id]);
         
         return [
             'judul' => $this->faker->sentence(4),
             'deskripsi' => $this->faker->paragraph(),
             'soal_esai' => $this->faker->paragraphs(3, true),
-            'mata_kuliah_id' => $mataKuliah->id,
+            'kelas_id' => $mataKuliah->id,
             'dosen_id' => $dosen->id,
             'deadline' => $this->faker->dateTimeBetween('+1 day', '+1 month'),
             'durasi_menit' => $this->faker->numberBetween(60, 180),
