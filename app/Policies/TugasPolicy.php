@@ -26,9 +26,9 @@ class TugasPolicy
             return true;
         }
         
-        // Dosen can view tugas if he is the dosen of the kelas
+        // Dosen can view tugas if he created it
         if ($user->isDosen()) {
-            return $tugas->kelas && $tugas->kelas->dosen && $tugas->kelas->dosen->id === $user->id;
+            return $tugas->dosen_id === $user->id;
         }
         
         // Mahasiswa can view tugas from their enrolled mata kuliah
@@ -60,9 +60,9 @@ class TugasPolicy
             return true;
         }
         
-        // Dosen can update tugas if he is the dosen of the kelas
+        // Dosen can update tugas if he created it
         if ($user->isDosen()) {
-            return $tugas->kelas && $tugas->kelas->dosen && $tugas->kelas->dosen->id === $user->id;
+            return $tugas->dosen_id === $user->id;
         }
         
         return false;
@@ -78,9 +78,9 @@ class TugasPolicy
             return true;
         }
         
-        // Dosen can delete tugas if he is the dosen of the kelas and no submissions yet
-        if ($user->isDosen() && $tugas->kelas && $tugas->kelas->dosen && $tugas->kelas->dosen->id === $user->id) {
-            return $tugas->jawabanMahasiswa()->count() === 0;
+        // Dosen can delete tugas if he created it
+        if ($user->isDosen()) {
+            return $tugas->dosen_id === $user->id;
         }
         
         return false;

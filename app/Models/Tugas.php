@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class Tugas extends Model
 {
@@ -17,6 +18,7 @@ class Tugas extends Model
         'deskripsi',
         'rubrik_penilaian',
         'kelas_id',
+        'dosen_id',
         'deadline',
         'durasi_menit',
         'nilai_maksimal',
@@ -86,21 +88,24 @@ class Tugas extends Model
         return 'active';
     }
     
-    // Relasi ke dosen melalui kelas
-    // public function dosen()
-    // {
-    //     return $this->kelas ? $this->kelas->dosen() : null;
-    // }
-    // Relasi ke dosen via kelas
+    // Relasi langsung ke dosen yang membuat tugas
     public function dosen()
     {
-        return $this->hasOneThrough(
+        return $this->belongsTo(User::class, 'dosen_id');
+    }
+    
+    // Relasi ke dosen via kelas (many-to-many) - untuk kompatibilitas
+    public function dosenKelas()
+    {
+        return $this->hasManyThrough(
             \App\Models\User::class,
             \App\Models\Kelas::class,
             'id', // Foreign key on kelas table...
             'id', // Foreign key on users table...
             'kelas_id', // Local key on tugas table...
-            'dosen_id' // Local key on kelas table...
-        );
+            'id' // Local key on kelas table...
+        )->whereHas('dosen', function($q) {
+            $q->where('dosen_kelas.kelas_id', DB::raw('kelas.id'));
+        });
     }
 }

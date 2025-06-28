@@ -65,26 +65,29 @@ class AdminDosenController extends Controller
             }
 
             if ($kelasMode === 'baru') {
-                // Multi kelas baru
+                $kelasIds = [];
                 foreach ($request->kelas as $kelasData) {
-                    \App\Models\Kelas::create([
+                    $kelas = \App\Models\Kelas::create([
                         'nama_kelas' => $kelasData['nama_kelas'],
                         'mata_kuliah_id' => $mataKuliahId,
-                        'dosen_id' => $user->id,
                     ]);
+                    $kelasIds[] = $kelas->id;
                 }
+                // Attach the new classes to the dosen
+                $user->kelasAsDosen()->attach($kelasIds);
             } else {
-                // Assign kelas yang sudah ada ke dosen ini
-                foreach ($request->kelas_pilih as $kelasId) {
-                    $kelas = \App\Models\Kelas::find($kelasId);
-                    if ($kelas) {
-                        $kelas->dosen_id = $user->id;
-                        $kelas->save();
-                    }
-                }
+                // Attach existing classes to the dosen
+                $user->kelasAsDosen()->attach($request->kelas_pilih);
             }
         });
 
         return redirect()->route('admin.dosen.create')->with('success', 'Dosen, mata kuliah, dan kelas berhasil didaftarkan.');
+    }
+
+    public function show($id)
+    {
+        $dosen = User::findOrFail($id);
+        $kelas = $dosen->kelasAsDosen;
+        return view('admin.dosen.show', compact('dosen', 'kelas'));
     }
 } 

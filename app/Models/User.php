@@ -76,10 +76,10 @@ class User extends \TCG\Voyager\Models\User
         return $this->hasMany(Penilaian::class, 'graded_by');
     }
     
-    // Relasi untuk Dosen - Kelas yang diampu
-    public function kelasDiampu()
+    // Relasi untuk Dosen - Kelas yang diampu (many-to-many relationship)
+    public function kelasAsDosen()
     {
-        return $this->hasMany(Kelas::class, 'dosen_id');
+        return $this->belongsToMany(Kelas::class, 'dosen_kelas', 'dosen_id', 'kelas_id');
     }
     
     // Relasi untuk Mahasiswa - Kelas yang diambil

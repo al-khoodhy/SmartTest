@@ -13,7 +13,6 @@ class Kelas extends Model
     protected $fillable = [
         'nama_kelas',
         'mata_kuliah_id',
-        'dosen_id',
     ];
 
     public function mataKuliah()
@@ -23,7 +22,8 @@ class Kelas extends Model
 
     public function dosen()
     {
-        return $this->belongsTo(User::class, 'dosen_id');
+        return $this->belongsToMany(User::class, 'dosen_kelas', 'kelas_id', 'dosen_id')
+                    ->where('role_id', 2); // Only users with role_id 2 (dosen)
     }
 
     public function enrollments()

@@ -5,11 +5,12 @@ namespace App\Http\Controllers\Dosen;
 use App\Http\Controllers\Controller;
 use App\Models\Tugas;
 use App\Models\MataKuliah;
+use App\Models\Kelas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class TugasController extends Controller
 {
@@ -24,9 +25,8 @@ class TugasController extends Controller
     public function index(Request $request)
     {
         $dosen = auth()->user();
-        $query = \App\Models\Tugas::whereHas('kelas', function($q) use ($dosen) {
-            $q->where('dosen_id', $dosen->id);
-        })->with('kelas.mataKuliah');
+        
+        $query = Tugas::where('dosen_id', $dosen->id)->with('kelas.mataKuliah');
         if ($request->kelas_id) {
             $query->where('kelas_id', $request->kelas_id);
         }
@@ -44,7 +44,7 @@ class TugasController extends Controller
             }
         }
         $tugas = $query->latest()->paginate(10);
-        $kelasList = \App\Models\Kelas::where('dosen_id', $dosen->id)->with('mataKuliah')->get();
+        $kelasList = $dosen->kelasAsDosen()->with('mataKuliah')->get();
         return view('dosen.tugas.index', compact('tugas', 'kelasList'));
     }
     
@@ -54,10 +54,10 @@ class TugasController extends Controller
     public function create()
     {
         $dosen = auth()->user();
-        $mataKuliah = \App\Models\MataKuliah::whereHas('dosen', function($q) use ($dosen) {
+        $mataKuliah = MataKuliah::whereHas('dosen', function($q) use ($dosen) {
             $q->where('users.id', $dosen->id);
         })->where('is_active', true)->get();
-        $kelasList = \App\Models\Kelas::where('dosen_id', $dosen->id)->get();
+        $kelasList = $dosen->kelasAsDosen()->get();
         return view('dosen.tugas.create', compact('mataKuliah', 'kelasList'));
     }
     
@@ -78,34 +78,57 @@ class TugasController extends Controller
             'soal.*.pertanyaan' => 'required|string',
             'soal.*.bobot' => 'required|numeric|min:0.01',
         ]);
+
         if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
         }
-        $tugas = \App\Models\Tugas::create([
-            'judul' => $request->judul,
-            'deskripsi' => $request->deskripsi,
-            'kelas_id' => $request->kelas_id,
-            'deadline' => $request->deadline,
-            'durasi_menit' => $request->durasi_menit,
-            'nilai_maksimal' => $request->nilai_maksimal,
-            'rubrik_penilaian' => $request->rubrik_penilaian,
-            'auto_grade' => $request->has('auto_grade'),
-            'is_active' => true
-        ]);
-        // Simpan soal
-        foreach ($request->soal as $soal) {
-            $tugas->soal()->create([
-                'pertanyaan' => $soal['pertanyaan'],
-                'bobot' => $soal['bobot'],
+
+        $dosen = auth()->user();
+        
+        // Verify that the dosen teaches this class
+        $kelas = $dosen->kelasAsDosen()->where('kelas.id', $request->kelas_id)->first();
+        if (!$kelas) {
+            return redirect()->back()
+                ->withErrors(['kelas_id' => 'Anda tidak mengajar kelas ini.'])
+                ->withInput();
+        }
+
+        DB::transaction(function () use ($request, $dosen, &$tugas) {
+            $tugas = Tugas::create([
+                'judul' => $request->judul,
+                'deskripsi' => $request->deskripsi,
+                'kelas_id' => $request->kelas_id,
+                'dosen_id' => $dosen->id,
+                'deadline' => $request->deadline,
+                'durasi_menit' => $request->durasi_menit,
+                'nilai_maksimal' => $request->nilai_maksimal,
+                'rubrik_penilaian' => $request->rubrik_penilaian,
+                'auto_grade' => $request->has('auto_grade'),
+                'is_active' => true
             ]);
-        }
+
+            // Simpan soal
+            if ($request->has('soal') && is_array($request->soal)) {
+                foreach ($request->soal as $soal) {
+                    if (!empty($soal['pertanyaan']) && !empty($soal['bobot'])) {
+                        $tugas->soal()->create([
+                            'pertanyaan' => $soal['pertanyaan'],
+                            'bobot' => $soal['bobot'],
+                        ]);
+                    }
+                }
+            }
+        });
+
         return redirect()->route('dosen.tugas.show', $tugas)->with('success', 'Tugas berhasil dibuat.');
     }
     
     /**
      * Display the specified tugas
      */
-    public function show(\App\Models\Tugas $tugas)
+    public function show(Tugas $tugas)
     {
         $tugas->load('kelas');
         $this->authorize('view', $tugas);
@@ -121,19 +144,19 @@ class TugasController extends Controller
     /**
      * Show the form for editing the specified tugas
      */
-    public function edit(\App\Models\Tugas $tugas)
+    public function edit(Tugas $tugas)
     {
         $tugas->load('kelas');
         $this->authorize('update', $tugas);
         $dosen = auth()->user();
-        $kelasList = \App\Models\Kelas::where('dosen_id', $dosen->id)->get();
+        $kelasList = $dosen->kelasAsDosen()->get();
         return view('dosen.tugas.edit', compact('tugas', 'kelasList'));
     }
     
     /**
      * Update the specified tugas
      */
-    public function update(Request $request, \App\Models\Tugas $tugas)
+    public function update(Request $request, Tugas $tugas)
     {
         $validator = Validator::make($request->all(), [
             'judul' => 'required|string|max:255',
@@ -148,9 +171,11 @@ class TugasController extends Controller
             'soal.*.pertanyaan' => 'required|string',
             'soal.*.bobot' => 'required|numeric|min:0.01',
         ]);
+        
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
+        
         $tugas->update([
             'judul' => $request->judul,
             'deskripsi' => $request->deskripsi,
@@ -162,28 +187,34 @@ class TugasController extends Controller
             'auto_grade' => $request->has('auto_grade'),
             'is_active' => $request->has('is_active')
         ]);
-        // Update soal: hapus semua lalu insert ulang (atau bisa dioptimasi)
+        
+        // Update soal: hapus semua lalu insert ulang
         $tugas->soal()->delete();
-        foreach ($request->soal as $soal) {
-            $tugas->soal()->create([
-                'pertanyaan' => $soal['pertanyaan'],
-                'bobot' => $soal['bobot'],
-            ]);
+        if ($request->has('soal') && is_array($request->soal)) {
+            foreach ($request->soal as $soal) {
+                if (!empty($soal['pertanyaan']) && !empty($soal['bobot'])) {
+                    $tugas->soal()->create([
+                        'pertanyaan' => $soal['pertanyaan'],
+                        'bobot' => $soal['bobot'],
+                    ]);
+                }
+            }
         }
+        
         return redirect()->route('dosen.tugas.show', $tugas)->with('success', 'Tugas berhasil diupdate.');
     }
     
     /**
      * Remove the specified tugas
      */
-    public function destroy(\App\Models\Tugas $tugas)
+    public function destroy(Tugas $tugas)
     {
         $tugas->load('kelas');
-        \Log::info('TugasController@destroy', [
+        Log::info('TugasController@destroy', [
             'user_id' => auth()->id(),
             'tugas_id' => $tugas->id,
-            'mata_kuliah_id' => $tugas->kelas ? $tugas->kelas->mata_kuliah_id : null,
-            'dosen_id' => $tugas->mataKuliah ? $tugas->mataKuliah->dosen_id : null,
+            'kelas_id' => $tugas->kelas_id,
+            'dosen_id' => $tugas->dosen_id,
         ]);
         $this->authorize('delete', $tugas);
         $tugas->delete();
@@ -193,14 +224,14 @@ class TugasController extends Controller
     /**
      * Toggle tugas status
      */
-    public function toggleStatus(\App\Models\Tugas $tugas)
+    public function toggleStatus(Tugas $tugas)
     {
         $tugas->load('kelas');
-        \Log::info('TugasController@toggleStatus', [
+        Log::info('TugasController@toggleStatus', [
             'user_id' => auth()->id(),
             'tugas_id' => $tugas->id,
-            'mata_kuliah_id' => $tugas->kelas ? $tugas->kelas->mata_kuliah_id : null,
-            'dosen_id' => $tugas->mataKuliah ? $tugas->mataKuliah->dosen_id : null,
+            'kelas_id' => $tugas->kelas_id,
+            'dosen_id' => $tugas->dosen_id,
         ]);
         $this->authorize('update', $tugas);
         $tugas->update(['is_active' => !$tugas->is_active]);

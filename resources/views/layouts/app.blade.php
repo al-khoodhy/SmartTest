@@ -142,6 +142,233 @@
             min-width: 36px;
             text-align: center;
         }
+        
+        /* Navbar dropdown styling */
+        .dropdown-header {
+            padding: 0.75rem 1rem;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .dropdown-item {
+            padding: 0.75rem 1rem;
+            transition: all 0.2s ease;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+            transform: translateX(2px);
+        }
+        
+        .dropdown-item.text-danger:hover {
+            background-color: #fef2f2;
+            color: #dc2626 !important;
+        }
+        
+        .dropdown-divider {
+            margin: 0.5rem 0;
+        }
+        
+        /* Navbar brand styling */
+        .navbar-brand {
+            font-weight: 600;
+            color: #0d6efd !important;
+        }
+        
+        /* User info in navbar */
+        .navbar-nav .nav-link .fw-semibold {
+            font-size: 0.9rem;
+        }
+        
+        .navbar-nav .nav-link small {
+            font-size: 0.75rem;
+        }
+        
+        /* Notification dropdown styling */
+        .dropdown-item.d-flex.align-items-start {
+            border-bottom: 1px solid #f1f3f4;
+        }
+        
+        .dropdown-item.d-flex.align-items-start:last-child {
+            border-bottom: none;
+        }
+        
+        .dropdown-item.d-flex.align-items-start:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .bg-primary.rounded-circle {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .bg-success.rounded-circle {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Badge positioning */
+        .position-relative .badge {
+            transform: translate(50%, -50%);
+        }
+        
+        /* Responsive improvements */
+        @media (max-width: 768px) {
+            .navbar-nav .nav-link {
+                padding: 0.5rem 0.75rem;
+            }
+            
+            .btn-sm .d-none.d-md-inline {
+                display: none !important;
+            }
+            
+            .dropdown-menu {
+                margin-top: 0.5rem;
+            }
+            
+            /* Ensure dropdowns are clickable on mobile */
+            .dropdown-menu {
+                z-index: 1050;
+            }
+            
+            /* Make sure navbar elements are clickable */
+            .navbar-nav .nav-link,
+            .navbar-nav .dropdown-toggle {
+                cursor: pointer;
+                pointer-events: auto;
+            }
+        }
+        
+        /* Ensure dropdowns work properly */
+        .dropdown-menu {
+            z-index: 1050;
+            pointer-events: auto;
+        }
+        
+        .dropdown-toggle {
+            cursor: pointer;
+        }
+        
+        /* Fix for navbar click issues */
+        .navbar-nav .nav-link {
+            pointer-events: auto;
+            cursor: pointer;
+        }
+        
+        .navbar-nav .dropdown-item {
+            pointer-events: auto;
+            cursor: pointer;
+        }
+        
+        /* Ensure navbar is properly positioned */
+        .navbar {
+            position: relative;
+            z-index: 1030;
+        }
+        
+        .navbar-collapse {
+            z-index: 1031;
+        }
+        
+        /* Fix for mobile navbar */
+        @media (max-width: 768px) {
+            .navbar-collapse {
+                background: white;
+                border-top: 1px solid #e9ecef;
+                margin-top: 0.5rem;
+                padding-top: 0.5rem;
+            }
+            
+            .navbar-nav .nav-item {
+                margin-bottom: 0.25rem;
+            }
+            
+            .navbar-nav .nav-link {
+                padding: 0.75rem 1rem;
+                border-radius: 0.375rem;
+            }
+            
+            .navbar-nav .nav-link:hover {
+                background-color: #f8f9fa;
+            }
+        }
+        
+        /* Ensure dropdown shows when show class is present */
+        .dropdown-menu.show {
+            display: block !important;
+        }
+        
+        /* Additional dropdown styling */
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            left: auto;
+            margin-top: 0.125rem;
+        }
+        
+        .dropdown-menu.show {
+            display: block;
+        }
+        
+        /* Ensure dropdown positioning */
+        .dropdown {
+            position: relative;
+        }
+        
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            left: auto;
+            z-index: 1050;
+            float: left;
+            min-width: 10rem;
+            padding: 0.5rem 0;
+            margin: 0.125rem 0 0;
+            font-size: 1rem;
+            color: #212529;
+            text-align: left;
+            list-style: none;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            border-radius: 0.375rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Ensure dropdown items are clickable */
+        .dropdown-item {
+            display: block;
+            width: 100%;
+            padding: 0.5rem 1rem;
+            clear: both;
+            font-weight: 400;
+            color: #212529;
+            text-align: inherit;
+            text-decoration: none;
+            white-space: nowrap;
+            background-color: transparent;
+            border: 0;
+            cursor: pointer;
+        }
+        
+        .dropdown-item:hover {
+            color: #1e2125;
+            background-color: #e9ecef;
+        }
+        
+        /* Ensure dropdown toggle is clickable */
+        .dropdown-toggle {
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -164,6 +391,59 @@
 
                     <!-- Right Side Of Navbar -->
                     <ul class="navbar-nav ms-auto">
+                        @auth
+                            @if(Auth::user()->role_id == 2)
+                                <!-- Quick Action Button for Dosen -->
+                                <li class="nav-item me-2">
+                                    <a class="btn btn-primary btn-sm d-flex align-items-center gap-1" href="{{ route('dosen.tugas.create') }}" title="Buat Tugas Baru">
+                                        <i class="bi bi-plus-lg"></i>
+                                        <span class="d-none d-md-inline">Tugas Baru</span>
+                                    </a>
+                                </li>
+                                
+                                <!-- Notification Bell for Dosen -->
+                                <li class="nav-item dropdown me-2">
+                                    <a class="nav-link position-relative" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-bell fs-5"></i>
+                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
+                                            3
+                                        </span>
+                                    </a>
+                                    <div class="dropdown-menu dropdown-menu-end shadow border-0" style="min-width: 300px; z-index: 1050;">
+                                        <div class="dropdown-header d-flex justify-content-between align-items-center">
+                                            <span class="fw-semibold">Notifikasi</span>
+                                            <a href="#" class="text-decoration-none small">Tandai semua dibaca</a>
+                                        </div>
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item d-flex align-items-start gap-2 p-3" href="#">
+                                            <div class="bg-primary rounded-circle p-1">
+                                                <i class="bi bi-journal-text text-white" style="font-size: 0.8rem;"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="fw-semibold small">Tugas baru dikumpulkan</div>
+                                                <div class="text-muted small">Mahasiswa mengumpulkan tugas "Pemrograman Web"</div>
+                                                <div class="text-muted small">2 menit yang lalu</div>
+                                            </div>
+                                        </a>
+                                        <a class="dropdown-item d-flex align-items-start gap-2 p-3" href="#">
+                                            <div class="bg-success rounded-circle p-1">
+                                                <i class="bi bi-check-circle text-white" style="font-size: 0.8rem;"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="fw-semibold small">Auto grading selesai</div>
+                                                <div class="text-muted small">15 jawaban berhasil dinilai otomatis</div>
+                                                <div class="text-muted small">1 jam yang lalu</div>
+                                            </div>
+                                        </a>
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item text-center text-primary" href="#">
+                                            Lihat semua notifikasi
+                                        </a>
+                                    </div>
+                                </li>
+                            @endif
+                        @endauth
+                        
                         <!-- Authentication Links -->
                         @guest
                             @if (Route::has('login'))
@@ -180,21 +460,93 @@
                         @else
                             <li class="nav-item dropdown">
                                 <a id="navbarDropdown" class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
-                                    <span>{{ Auth::user()->name }}</span>
-                                    <i class="bi bi-person-circle fs-5"></i>
+                                    <div class="d-flex flex-column align-items-start d-none d-md-flex">
+                                        <span class="fw-semibold">{{ Auth::user()->name }}</span>
+                                        <small class="text-muted">
+                                            @if(Auth::user()->role_id == 1)
+                                                Administrator
+                                            @elseif(Auth::user()->role_id == 2)
+                                                Dosen
+                                            @elseif(Auth::user()->role_id == 3)
+                                                Mahasiswa
+                                            @endif
+                                        </small>
+                                    </div>
+                                    <span class="d-md-none fw-semibold">{{ Auth::user()->name }}</span>
+                                    <i class="bi bi-person-circle fs-4 text-primary"></i>
                                 </a>
 
-                                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                                    <a class="dropdown-item" href="{{ route('logout') }}"
-                                       onclick="event.preventDefault();
-                                                     document.getElementById('logout-form').submit();">
-                                        {{ __('Logout') }}
+                                <div class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="navbarDropdown" style="min-width: 200px; z-index: 1050;">
+                                    <div class="dropdown-header">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi bi-person-circle fs-4 text-primary"></i>
+                                            <div>
+                                                <div class="fw-semibold">{{ Auth::user()->name }}</div>
+                                                <small class="text-muted">{{ Auth::user()->email }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="dropdown-divider"></div>
+                                    
+                                    @if(Auth::user()->role_id == 2)
+                                        <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('dosen.dashboard') }}">
+                                            <i class="bi bi-speedometer2"></i>
+                                            <span>Dashboard</span>
+                                        </a>
+                                        <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('dosen.tugas.index') }}">
+                                            <i class="bi bi-journal-text"></i>
+                                            <span>Kelola Tugas</span>
+                                        </a>
+                                        <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('dosen.penilaian.index') }}">
+                                            <i class="bi bi-clipboard-check"></i>
+                                            <span>Penilaian</span>
+                                        </a>
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item d-flex align-items-center gap-2" href="#">
+                                            <i class="bi bi-person-gear"></i>
+                                            <span>Profil</span>
+                                        </a>
+                                        <a class="dropdown-item d-flex align-items-center gap-2" href="#">
+                                            <i class="bi bi-gear"></i>
+                                            <span>Pengaturan</span>
+                                        </a>
+                                        <div class="dropdown-divider"></div>
+                                    @elseif(Auth::user()->role_id == 3)
+                                        <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('mahasiswa.dashboard') }}">
+                                            <i class="bi bi-speedometer2"></i>
+                                            <span>Dashboard</span>
+                                        </a>
+                                        <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('mahasiswa.tugas.index') }}">
+                                            <i class="bi bi-journal-text"></i>
+                                            <span>Tugas</span>
+                                        </a>
+                                        <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('mahasiswa.nilai.index') }}">
+                                            <i class="bi bi-bar-chart"></i>
+                                            <span>Nilai</span>
+                                        </a>
+                                        <div class="dropdown-divider"></div>
+                                    @endif
+                                    
+                                    <a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#" onclick="logout()">
+                                        <i class="bi bi-box-arrow-right"></i>
+                                        <span>{{ __('Logout') }}</span>
                                     </a>
 
                                     <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
                                         @csrf
                                     </form>
                                 </div>
+                            </li>
+                            
+                            <!-- Mobile-friendly logout button -->
+                            <li class="nav-item d-md-none">
+                                <a class="nav-link text-danger" href="#" onclick="logout()">
+                                    <i class="bi bi-box-arrow-right"></i>
+                                    <span>Logout</span>
+                                </a>
+                                <form id="logout-form-mobile" action="{{ route('logout') }}" method="POST" class="d-none">
+                                    @csrf
+                                </form>
                             </li>
                         @endguest
                     </ul>
@@ -263,6 +615,115 @@
         </div>
     </div>
     <script>
+        // Robust dropdown implementation
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Initializing dropdowns...');
+            
+            // Initialize all dropdowns
+            initializeDropdowns();
+            
+            // Handle logout clicks
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.dropdown-item') && e.target.closest('.dropdown-item').classList.contains('text-danger')) {
+                    e.preventDefault();
+                    logout();
+                }
+            });
+        });
+        
+        function initializeDropdowns() {
+            // Get all dropdown toggles
+            const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+            
+            dropdownToggles.forEach(function(toggle) {
+                // Remove any existing event listeners
+                const newToggle = toggle.cloneNode(true);
+                toggle.parentNode.replaceChild(newToggle, toggle);
+                
+                // Add click event listener
+                newToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const dropdown = this.closest('.dropdown');
+                    const menu = dropdown.querySelector('.dropdown-menu');
+                    
+                    // Close all other dropdowns
+                    document.querySelectorAll('.dropdown-menu.show').forEach(function(openMenu) {
+                        if (openMenu !== menu) {
+                            openMenu.classList.remove('show');
+                            openMenu.previousElementSibling.setAttribute('aria-expanded', 'false');
+                        }
+                    });
+                    
+                    // Toggle current dropdown
+                    menu.classList.toggle('show');
+                    this.setAttribute('aria-expanded', menu.classList.contains('show'));
+                    
+                    console.log('Dropdown toggled:', menu.classList.contains('show'));
+                });
+            });
+            
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.dropdown')) {
+                    document.querySelectorAll('.dropdown-menu.show').forEach(function(menu) {
+                        menu.classList.remove('show');
+                        const toggle = menu.previousElementSibling;
+                        if (toggle) {
+                            toggle.setAttribute('aria-expanded', 'false');
+                        }
+                    });
+                }
+            });
+            
+            // Close dropdowns on escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    document.querySelectorAll('.dropdown-menu.show').forEach(function(menu) {
+                        menu.classList.remove('show');
+                        const toggle = menu.previousElementSibling;
+                        if (toggle) {
+                            toggle.setAttribute('aria-expanded', 'false');
+                        }
+                    });
+                }
+            });
+        }
+        
+        function logout() {
+            console.log('Logout function called');
+            const form = document.getElementById('logout-form') || document.getElementById('logout-form-mobile');
+            if (form) {
+                form.submit();
+            } else {
+                window.location.href = '{{ route("logout") }}';
+            }
+        }
+        
+        // Test function to verify dropdown is working
+        function testDropdown() {
+            console.log('Testing dropdown...');
+            const dropdown = document.getElementById('navbarDropdown');
+            const menu = dropdown ? dropdown.nextElementSibling : null;
+            
+            if (dropdown && menu) {
+                console.log('Dropdown found:', dropdown);
+                console.log('Menu found:', menu);
+                console.log('Menu classes:', menu.className);
+                
+                // Manually show dropdown for testing
+                menu.classList.add('show');
+                dropdown.setAttribute('aria-expanded', 'true');
+                console.log('Dropdown manually shown for testing');
+            } else {
+                console.log('Dropdown or menu not found');
+            }
+        }
+        
+        // Call test function after a delay
+        setTimeout(testDropdown, 3000);
+        
         function toggleSidebar(force) {
             var sidebar = document.getElementById('sidebar');
             var backdrop = document.getElementById('sidebar-backdrop');

@@ -84,23 +84,33 @@
                                 </div>
                                 <div class="card-body">
                                     <div class="row">
-                                        <div class="col-md-3">
+                                        <div class="col-md-2">
                                             <a href="{{ route('dosen.tugas.create') }}" class="btn btn-primary btn-block">
-                                                <i class="fas fa-plus"></i> Buat Tugas Baru
+                                                <i class="fas fa-plus"></i> Buat Tugas
                                             </a>
                                         </div>
-                                        <div class="col-md-3">
+                                        <div class="col-md-2">
                                             <a href="{{ route('dosen.tugas.index') }}" class="btn btn-success btn-block">
                                                 <i class="fas fa-list"></i> Kelola Tugas
                                             </a>
                                         </div>
-                                        <div class="col-md-3">
-                                            <a href="{{ route('dosen.penilaian.index') }}" class="btn btn-warning btn-block">
+                                        <div class="col-md-2">
+                                            <a href="{{ route('dosen.mata-kuliah.index') }}" class="btn btn-info btn-block">
+                                                <i class="fas fa-book"></i> Mata Kuliah
+                                            </a>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <a href="{{ route('dosen.kelas.index') }}" class="btn btn-warning btn-block">
+                                                <i class="fas fa-chalkboard"></i> Kelas
+                                            </a>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <a href="{{ route('dosen.penilaian.index') }}" class="btn btn-secondary btn-block">
                                                 <i class="fas fa-star"></i> Penilaian
                                             </a>
                                         </div>
-                                        <div class="col-md-3">
-                                            <a href="{{ route('voyager.dashboard') }}" class="btn btn-info btn-block">
+                                        <div class="col-md-2">
+                                            <a href="{{ route('voyager.dashboard') }}" class="btn btn-dark btn-block">
                                                 <i class="fas fa-cog"></i> Admin Panel
                                             </a>
                                         </div>

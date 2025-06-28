@@ -25,18 +25,17 @@ class PenilaianController extends Controller
     public function index(Request $request)
     {
         $dosen = auth()->user();
-        $tugasQuery = \App\Models\Tugas::whereHas('kelas', function($q) use ($dosen) {
-            $q->where('dosen_id', $dosen->id);
-        })->with('kelas.mataKuliah');
+        
+        $tugasQuery = Tugas::where('dosen_id', $dosen->id)->with('kelas.mataKuliah');
         if ($request->kelas_id) {
             $tugasQuery->where('kelas_id', $request->kelas_id);
         }
         $tugas = $tugasQuery->latest()->paginate(10);
-        $kelas = \App\Models\Kelas::where('dosen_id', $dosen->id)->with('mataKuliah')->get();
-        $totalJawaban = \App\Models\JawabanMahasiswa::whereHas('tugas.kelas', function($q) use ($dosen) {
+        $kelas = $dosen->kelasAsDosen()->with('mataKuliah')->get();
+        $totalJawaban = JawabanMahasiswa::whereHas('tugas', function($q) use ($dosen) {
             $q->where('dosen_id', $dosen->id);
         })->where('status', 'submitted')->count();
-        $sudahDinilai = \App\Models\JawabanMahasiswa::whereHas('tugas.kelas', function($q) use ($dosen) {
+        $sudahDinilai = JawabanMahasiswa::whereHas('tugas', function($q) use ($dosen) {
             $q->where('dosen_id', $dosen->id);
         })->where('status', 'graded')->count();
         $menungguPenilaian = $totalJawaban - $sudahDinilai;

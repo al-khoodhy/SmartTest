@@ -33,6 +33,16 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 Route::prefix('dosen')->name('dosen.')->middleware(['auth', 'role:2'])->group(function () {
     Route::get('/dashboard', [DosenController::class, 'dashboard'])->name('dashboard');
     
+    // Mata Kuliah routes
+    Route::resource('mata-kuliah', \App\Http\Controllers\Dosen\MataKuliahController::class)->parameters([
+        'mata-kuliah' => 'mataKuliah'
+    ]);
+    
+    // Kelas routes
+    Route::resource('kelas', \App\Http\Controllers\Dosen\KelasController::class)->parameters([
+        'kelas' => 'kelas'
+    ]);
+    
     // Tugas routes
     Route::resource('tugas', \App\Http\Controllers\Dosen\TugasController::class)->parameters([
         'tugas' => 'tugas'
