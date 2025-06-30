@@ -152,89 +152,92 @@
 
                     <!-- Detail Jawaban Per Soal -->
                     <h5>Detail Jawaban Per Soal</h5>
-                    <div class="table-responsive mb-4">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th width="5%">No</th>
-                                    <th width="20%">Soal</th>
-                                    <th width="8%">Bobot</th>
-                                    <th width="25%">Jawaban Mahasiswa</th>
-                                    <th width="8%">Nilai</th>
-                                    <th width="10%">Status</th>
-                                    <th width="24%">Feedback</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($jawaban->jawabanSoal as $index => $jawabanSoal)
-                                    <tr>
-                                        <td>{{ $index + 1 }}</td>
-                                        <td>
-                                            <strong>{{ $jawabanSoal->soal->pertanyaan ?? '-' }}</strong>
-                                        </td>
-                                        <td>{{ $jawabanSoal->soal->bobot ?? 1 }}</td>
-                                        <td>
-                                            <div class="border p-2 bg-light" style="max-height: 150px; overflow-y: auto;">
-                                                {!! nl2br(e($jawabanSoal->jawaban)) !!}
-                                            </div>
-                                        </td>
-                                        <td>
-                                            @if($jawabanSoal->penilaian)
-                                                <span class="badge bg-primary">{{ $jawabanSoal->penilaian->nilai_final ?? $jawabanSoal->penilaian->nilai_manual ?? $jawabanSoal->penilaian->nilai_ai ?? 0 }}</span>
-                                            @else
-                                                <span class="badge bg-secondary">-</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @if($jawabanSoal->penilaian)
-                                                @if($jawabanSoal->penilaian->status_penilaian == 'final')
-                                                    <span class="badge bg-success">Manual</span>
-                                                @elseif($jawabanSoal->penilaian->status_penilaian == 'ai_graded')
-                                                    <span class="badge bg-info">AI</span>
-                                                @else
-                                                    <span class="badge bg-warning">{{ ucfirst($jawabanSoal->penilaian->status_penilaian) }}</span>
-                                                @endif
-                                            @else
-                                                <span class="badge bg-secondary">Belum Dinilai</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @if($jawabanSoal->penilaian)
-                                                @if($jawabanSoal->penilaian->feedback_manual)
-                                                    <div class="mb-2">
-                                                        <small class="text-success fw-bold">
-                                                            <i class="bi bi-person-check"></i> Manual:
-                                                        </small>
-                                                        <div class="mt-1 p-2 bg-light border-start border-success border-3" style="max-height: 100px; overflow-y: auto;">
-                                                            {!! nl2br(e($jawabanSoal->penilaian->feedback_manual)) !!}
-                                                        </div>
-                                                    </div>
-                                                @endif
-                                                @if($jawabanSoal->penilaian->feedback_ai)
-                                                    <div>
-                                                        <small class="text-primary fw-bold">
-                                                            <i class="bi bi-robot"></i> AI:
-                                                        </small>
-                                                        <div class="mt-1 p-2 bg-light border-start border-primary border-3" style="max-height: 100px; overflow-y: auto;">
-                                                            {!! nl2br(e($jawabanSoal->penilaian->feedback_ai)) !!}
-                                                        </div>
-                                                    </div>
-                                                @endif
-                                                @if(!$jawabanSoal->penilaian->feedback_manual && !$jawabanSoal->penilaian->feedback_ai)
-                                                    <span class="text-muted">-</span>
-                                                @endif
-                                            @else
-                                                <span class="text-muted">-</span>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="7" class="text-center">Tidak ada soal yang tersedia.</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                    <div class="mb-4">
+                        @forelse($jawaban->jawabanSoal as $index => $jawabanSoal)
+                            <div class="card mb-3">
+                                <div class="card-header bg-light">
+                                    <strong>Soal #{{ $index + 1 }}</strong>
+                                </div>
+                                <div class="card-body p-0">
+                                    <table class="table mb-0 table-bordered">
+                                        <tbody>
+                                            <tr>
+                                                <th width="20%">Soal</th>
+                                                <td>{{ $jawabanSoal->soal->pertanyaan ?? '-' }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Bobot</th>
+                                                <td>{{ $jawabanSoal->soal->bobot ?? 1 }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Jawaban Mahasiswa</th>
+                                                <td><div class="border p-2 bg-light" style="max-height: 150px; overflow-y: auto;">{!! nl2br(e($jawabanSoal->jawaban)) !!}</div></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Nilai</th>
+                                                <td>
+                                                    @if($jawabanSoal->penilaian)
+                                                        <span class="badge bg-primary">{{ $jawabanSoal->penilaian->nilai_final ?? $jawabanSoal->penilaian->nilai_manual ?? $jawabanSoal->penilaian->nilai_ai ?? 0 }}</span>
+                                                    @else
+                                                        <span class="badge bg-secondary">-</span>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th>Status</th>
+                                                <td>
+                                                    @if($jawabanSoal->penilaian)
+                                                        @if($jawabanSoal->penilaian->status_penilaian == 'final')
+                                                            <span class="badge bg-success">Manual</span>
+                                                        @elseif($jawabanSoal->penilaian->status_penilaian == 'ai_graded')
+                                                            <span class="badge bg-info">AI</span>
+                                                        @else
+                                                            <span class="badge bg-warning">{{ ucfirst($jawabanSoal->penilaian->status_penilaian) }}</span>
+                                                        @endif
+                                                    @else
+                                                        <span class="badge bg-secondary">Belum Dinilai</span>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th>Feedback</th>
+                                                <td>
+                                                    @if($jawabanSoal->penilaian)
+                                                        @if($jawabanSoal->penilaian->feedback_manual)
+                                                            <div class="mb-2">
+                                                                <small class="text-success fw-bold">
+                                                                    <i class="bi bi-person-check"></i> Manual:
+                                                                </small>
+                                                                <div class="mt-1 p-2 bg-light border-start border-success border-3" style="max-height: 100px; overflow-y: auto;">
+                                                                    {!! nl2br(e($jawabanSoal->penilaian->feedback_manual)) !!}
+                                                                </div>
+                                                            </div>
+                                                        @endif
+                                                        @if($jawabanSoal->penilaian->feedback_ai)
+                                                            <div>
+                                                                <small class="text-primary fw-bold">
+                                                                    <i class="bi bi-robot"></i> AI:
+                                                                </small>
+                                                                <div class="mt-1 p-2 bg-light border-start border-primary border-3" style="max-height: 100px; overflow-y: auto;">
+                                                                    {!! nl2br(e($jawabanSoal->penilaian->feedback_ai)) !!}
+                                                                </div>
+                                                            </div>
+                                                        @endif
+                                                        @if(!$jawabanSoal->penilaian->feedback_manual && !$jawabanSoal->penilaian->feedback_ai)
+                                                            <span class="text-muted">-</span>
+                                                        @endif
+                                                    @else
+                                                        <span class="text-muted">-</span>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="alert alert-warning">Tidak ada soal yang tersedia.</div>
+                        @endforelse
                     </div>
 
                     <!-- Feedback Keseluruhan -->
