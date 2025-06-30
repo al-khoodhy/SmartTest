@@ -15,7 +15,7 @@ class DosenController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'role:2']);
+        $this->middleware(['auth', 'voyager.permission:browse_dosen_dashboard']);
     }
     
     public function dashboard()

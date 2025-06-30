@@ -123,7 +123,7 @@
                                                 <span class="char-count" data-target="jawaban_soal_{{ $soal->id }}">
                                                     {{ strlen(optional($jawaban->jawabanSoal->where('soal_id', $soal->id)->first())->jawaban) }}
                                                 </span> 
-                                                / 20 karakter minimum
+                                                karakter
                                             </div>
                                         </div>
                                     </div>
@@ -151,7 +151,7 @@
                         </div>
 
                                 <div class="mt-3">
-                                    <button type="submit" class="btn btn-secondary btn-lg me-2" id="submitBtn" disabled>
+                                    <button type="button" class="btn btn-secondary btn-lg me-2" id="submitBtn" disabled data-bs-toggle="modal" data-bs-target="#modalSubmitJawaban">
                                 <i class="fas fa-paper-plane"></i> Submit Jawaban
                             </button>
                             <a href="{{ route('mahasiswa.tugas.show', $jawaban->tugas) }}" class="btn btn-secondary btn-lg">
@@ -215,6 +215,26 @@
     </div>
 </div>
 
+<!-- Modal Konfirmasi Submit Jawaban -->
+<div class="modal fade" id="modalSubmitJawaban" tabindex="-1" aria-labelledby="modalSubmitJawabanLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalSubmitJawabanLabel">Konfirmasi Submit Jawaban</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Apakah Anda yakin ingin mengirim jawaban ini? Setelah submit, Anda <b>tidak dapat mengubah jawaban</b>.<br>
+        Pastikan semua jawaban sudah benar dan lengkap.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-primary" id="btnKonfirmasiSubmitJawaban">Ya, Kirim Jawaban</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     let remainingSeconds = {{ $sisaWaktu }};
@@ -247,28 +267,17 @@ document.addEventListener('DOMContentLoaded', function() {
             const length = this.value.length;
             charCountElement.textContent = length;
             
-            if (length >= 20) {
-                this.classList.remove('is-invalid');
-                charCountElement.classList.remove('text-danger');
-                charCountElement.classList.add('text-success');
-            } else {
-                this.classList.add('is-invalid');
-                charCountElement.classList.remove('text-success');
-                charCountElement.classList.add('text-danger');
-            }
+            // Remove any validation styling since there's no minimum requirement
+            this.classList.remove('is-invalid');
+            charCountElement.classList.remove('text-danger', 'text-success');
             
             hasUnsavedChanges = true;
             validateAllAnswers();
         });
         
-        // Initial validation
+        // Initial character count display
         const length = textarea.value.length;
         charCountElement.textContent = length;
-        if (length >= 20) {
-            charCountElement.classList.add('text-success');
-        } else {
-            charCountElement.classList.add('text-danger');
-        }
     });
     
     // Validate all answers
@@ -279,7 +288,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const charCountElement = textarea.parentElement.querySelector('.char-count');
             const length = textarea.value.length;
             charCountElement.textContent = length;
-            if (length >= 20) {
+            
+            // Only check if answer is not empty (required field)
+            if (length > 0) {
                 textarea.classList.remove('is-invalid');
                 charCountElement.classList.remove('text-danger');
                 charCountElement.classList.add('text-success');
@@ -308,12 +319,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 debugStatusElement.textContent = '❌ Jawaban belum valid & konfirmasi belum dicentang';
                 debugStatusElement.className = 'text-danger';
             } else if (!allValid) {
-                debugStatusElement.textContent = '❌ Jawaban belum valid (min 20 karakter per soal)';
+                debugStatusElement.textContent = '❌ Jawaban belum valid (harus diisi)';
                 debugStatusElement.className = 'text-danger';
             } else {
                 debugStatusElement.textContent = '❌ Konfirmasi belum dicentang';
                 debugStatusElement.className = 'text-danger';
-    }
+            }
         }
     }
     
@@ -497,6 +508,15 @@ document.addEventListener('DOMContentLoaded', function() {
         timeProgress: timeProgress,
         submitBtn: submitBtn
     });
+
+    var btnKonfirmasi = document.getElementById('btnKonfirmasiSubmitJawaban');
+    if(btnKonfirmasi) {
+        btnKonfirmasi.addEventListener('click', function() {
+            // Pastikan tidak ada confirm() atau event JS lain
+            document.getElementById('jawabanForm').onsubmit = null;
+            document.getElementById('jawabanForm').submit();
+        });
+    }
 });
 </script>
 

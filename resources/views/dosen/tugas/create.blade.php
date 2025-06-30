@@ -108,7 +108,7 @@
                                     <label for="durasi_menit">Durasi (Menit) <span class="text-danger">*</span></label>
                                     <input type="number" class="form-control @error('durasi_menit') is-invalid @enderror" 
                                            id="durasi_menit" name="durasi_menit" value="{{ old('durasi_menit', 120) }}" 
-                                           min="30" max="480" required>
+                                           min="1" max="480" required>
                                     @error('durasi_menit')
                                         <span class="invalid-feedback">{{ $message }}</span>
                                     @enderror
@@ -143,7 +143,7 @@
                         <hr>
 
                         <div class="form-group mb-0">
-                            <button type="submit" class="btn btn-primary" onclick="return confirm('Yakin ingin menyimpan tugas ini?')">
+                            <button type="submit" class="btn btn-primary" id="btnSimpanTugas">
                                 <i class="fas fa-save"></i> Simpan Tugas
                             </button>
                             <a href="{{ route('dosen.tugas.index') }}" class="btn btn-secondary">
@@ -221,30 +221,29 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     updateRemoveButtons();
 
-    // Voyager style confirmation modal
+    // Voyager style confirmation modal untuk submit tugas
     var voyagerModal = $('#voyagerConfirmModal');
     var voyagerModalBody = document.getElementById('voyagerConfirmModalBody');
     var voyagerModalYes = document.getElementById('voyagerConfirmModalYes');
-    var confirmCallback = null;
-    function showVoyagerConfirm(message, callback) {
+    var tugasForm = document.querySelector('form[action*="tugas/store"]');
+    var tugasFormToSubmit = null;
+    function showVoyagerConfirm(message, form) {
         voyagerModalBody.textContent = message;
-        confirmCallback = callback;
+        tugasFormToSubmit = form;
         voyagerModal.modal('show');
     }
     voyagerModalYes.onclick = function() {
-        if(confirmCallback) {
-            confirmCallback();
-            confirmCallback = null;
+        if(tugasFormToSubmit) {
+            tugasFormToSubmit.submit();
+            tugasFormToSubmit = null;
             voyagerModal.modal('hide');
         }
     };
-
-    // Attach to form submit
-    var formEl = document.querySelector('form[action*="tugas/store"]');
-    if(formEl) {
-        formEl.addEventListener('submit', function(e) {
+    var btnSimpanTugas = document.getElementById('btnSimpanTugas');
+    if(tugasForm && btnSimpanTugas) {
+        btnSimpanTugas.addEventListener('click', function(e) {
             e.preventDefault();
-            showVoyagerConfirm('Yakin ingin menyimpan tugas ini?', () => formEl.submit());
+            showVoyagerConfirm('Yakin ingin menyimpan tugas ini?', tugasForm);
         });
     }
 });

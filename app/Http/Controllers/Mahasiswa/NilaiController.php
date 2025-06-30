@@ -5,13 +5,14 @@ namespace App\Http\Controllers\Mahasiswa;
 use App\Http\Controllers\Controller;
 use App\Models\MataKuliah;
 use App\Models\JawabanMahasiswa;
+use App\Models\Enrollment;
 use Illuminate\Http\Request;
 
 class NilaiController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'role:3']);
+        $this->middleware(['auth', 'voyager.permission:view_nilai']);
     }
     
     /**
@@ -22,10 +23,12 @@ class NilaiController extends Controller
         $mahasiswa = auth()->user();
         
         // Get mata kuliah yang diambil mahasiswa
-        $kelasIds = $mahasiswa->enrollments()->active()->pluck('kelas_id');
+        $kelasIds = Enrollment::where('mahasiswa_id', $mahasiswa->id)
+            ->where('status', 'active')
+            ->pluck('kelas_id');
         
-        $query = $mahasiswa->jawabanMahasiswa()
-            ->with(['tugas.kelas.mataKuliah', 'penilaian'])
+        $query = JawabanMahasiswa::where('mahasiswa_id', $mahasiswa->id)
+            ->with(['tugas.kelas.mataKuliah', 'penilaian', 'jawabanSoal.soal', 'jawabanSoal.penilaian'])
             ->whereHas('tugas', function($q) use ($kelasIds) {
                 $q->whereIn('kelas_id', $kelasIds);
             })
@@ -42,10 +45,17 @@ class NilaiController extends Controller
         if ($request->status_penilaian) {
             switch ($request->status_penilaian) {
                 case 'graded':
-                    $query->whereHas('penilaian');
+                    $query->where(function($q) {
+                        $q->where('status', 'graded')
+                          ->orWhereHas('jawabanSoal.penilaian', function($subQ) {
+                              $subQ->whereIn('status_penilaian', ['ai_graded', 'final']);
+                          });
+                    });
                     break;
                 case 'pending':
-                    $query->whereDoesntHave('penilaian');
+                    $query->whereDoesntHave('jawabanSoal.penilaian', function($q) {
+                        $q->whereIn('status_penilaian', ['ai_graded', 'final']);
+                    });
                     break;
             }
         }
@@ -53,33 +63,48 @@ class NilaiController extends Controller
         $jawaban = $query->latest()->paginate(10);
         
         // Get mata kuliah untuk filter
-        $kelas = $mahasiswa->enrollments()->active()->get();
+        $kelas = Enrollment::where('mahasiswa_id', $mahasiswa->id)
+            ->where('status', 'active')
+            ->with('kelas.mataKuliah')
+            ->get();
         
-        // Statistik nilai
-        $totalTugas = $mahasiswa->jawabanMahasiswa()
+        // Statistik nilai - perbaiki logika untuk auto-grading
+        $totalTugas = JawabanMahasiswa::where('mahasiswa_id', $mahasiswa->id)
             ->whereHas('tugas', function($q) use ($kelasIds) {
                 $q->whereIn('kelas_id', $kelasIds);
             })
             ->whereIn('status', ['submitted', 'graded'])
             ->count();
         
-        $sudahDinilai = $mahasiswa->jawabanMahasiswa()
+        $sudahDinilai = JawabanMahasiswa::where('mahasiswa_id', $mahasiswa->id)
             ->whereHas('tugas', function($q) use ($kelasIds) {
                 $q->whereIn('kelas_id', $kelasIds);
             })
-            ->whereHas('penilaian')
+            ->where(function($q) {
+                $q->where('status', 'graded')
+                  ->orWhereHas('jawabanSoal.penilaian', function($subQ) {
+                      $subQ->whereIn('status_penilaian', ['ai_graded', 'final']);
+                  });
+            })
             ->count();
         
         $menungguPenilaian = $totalTugas - $sudahDinilai;
         
-        // Rata-rata nilai
-        $rataRataNilai = $mahasiswa->jawabanMahasiswa()
+        // Rata-rata nilai - include auto-graded answers
+        $jawabanUntukRataRata = JawabanMahasiswa::where('mahasiswa_id', $mahasiswa->id)
             ->whereHas('tugas', function($q) use ($kelasIds) {
                 $q->whereIn('kelas_id', $kelasIds);
             })
-            ->whereHas('penilaian')
-            ->join('penilaian', 'jawaban_mahasiswa.id', '=', 'penilaian.jawaban_id')
-            ->avg('penilaian.nilai_final');
+            ->where(function($q) {
+                $q->where('status', 'graded')
+                  ->orWhereHas('jawabanSoal.penilaian', function($subQ) {
+                      $subQ->whereIn('status_penilaian', ['ai_graded', 'final']);
+                  });
+            })
+            ->with(['jawabanSoal.soal', 'jawabanSoal.penilaian'])
+            ->get();
+        
+        $rataRataNilai = $jawabanUntukRataRata->avg('nilai_akhir');
         
         return view('mahasiswa.nilai.index', compact(
             'jawaban', 
@@ -109,7 +134,12 @@ class NilaiController extends Controller
                 ->with('error', 'Jawaban belum disubmit.');
         }
         
-        $jawaban->load(['tugas.kelas.mataKuliah', 'penilaian']);
+        $jawaban->load([
+            'tugas.kelas.mataKuliah', 
+            'penilaian',
+            'jawabanSoal.soal',
+            'jawabanSoal.penilaian'
+        ]);
         
         return view('mahasiswa.nilai.show', compact('jawaban'));
     }
@@ -121,25 +151,29 @@ class NilaiController extends Controller
     {
         $mahasiswa = auth()->user();
         
-        $kelasIds = $mahasiswa->enrollments()->active()->pluck('kelas_id');
+        $kelasIds = Enrollment::where('mahasiswa_id', $mahasiswa->id)
+            ->where('status', 'active')
+            ->pluck('kelas_id');
         
         $nilaiPerMK = [];
         
         foreach ($kelasIds as $kelasId) {
-            $kelas = $mahasiswa->enrollments()->find($kelasId);
+            $kelas = Enrollment::where('mahasiswa_id', $mahasiswa->id)
+                ->where('kelas_id', $kelasId)
+                ->where('status', 'active')
+                ->with('kelas.mataKuliah')
+                ->first();
             
-            $jawaban = $mahasiswa->jawabanMahasiswa()
+            $jawaban = JawabanMahasiswa::where('mahasiswa_id', $mahasiswa->id)
                 ->whereHas('tugas', function($q) use ($kelasId) {
                     $q->where('kelas_id', $kelasId);
                 })
-                ->whereHas('penilaian')
-                ->with(['tugas', 'penilaian'])
+                ->where('status', 'graded')
+                ->with(['tugas'])
                 ->get();
             
             if ($jawaban->count() > 0) {
-                $totalNilai = $jawaban->sum(function($j) {
-                    return $j->penilaian->nilai_final;
-                });
+                $totalNilai = $jawaban->sum('nilai_akhir');
                 
                 $rataRata = $totalNilai / $jawaban->count();
                 
@@ -147,12 +181,8 @@ class NilaiController extends Controller
                     'kelas' => $kelas,
                     'total_tugas' => $jawaban->count(),
                     'rata_rata' => round($rataRata, 2),
-                    'nilai_tertinggi' => $jawaban->max(function($j) {
-                        return $j->penilaian->nilai_final;
-                    }),
-                    'nilai_terendah' => $jawaban->min(function($j) {
-                        return $j->penilaian->nilai_final;
-                    })
+                    'nilai_tertinggi' => $jawaban->max('nilai_akhir'),
+                    'nilai_terendah' => $jawaban->min('nilai_akhir')
                 ];
             }
         }

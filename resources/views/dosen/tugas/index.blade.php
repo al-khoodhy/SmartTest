@@ -13,6 +13,36 @@
                 </div>
 
                 <div class="card-body">
+                    <!-- Filter Form -->
+                    <form class="mb-4" method="GET">
+                        <div class="row align-items-end">
+                            <div class="col-md-4">
+                                <label for="kelas_id">Mata Kuliah/Kelas</label>
+                                <select name="kelas_id" id="kelas_id" class="form-control">
+                                    <option value="">Semua</option>
+                                    @foreach($kelasList as $kelas)
+                                        <option value="{{ $kelas->id }}" {{ request('kelas_id') == $kelas->id ? 'selected' : '' }}>
+                                            {{ $kelas->mataKuliah->nama_mk ?? '-' }} - {{ $kelas->nama_kelas }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="status">Status</label>
+                                <select name="status" id="status" class="form-control">
+                                    <option value="">Semua</option>
+                                    <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Aktif</option>
+                                    <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Tidak Aktif</option>
+                                    <option value="expired" {{ request('status') == 'expired' ? 'selected' : '' }}>Expired</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="btn btn-primary">Filter</button>
+                                <a href="{{ route('dosen.tugas.index') }}" class="btn btn-secondary">Reset</a>
+                            </div>
+                        </div>
+                    </form>
+
                     <!-- Tugas List -->
                     @if($tugas->count() > 0)
                         <div class="table-responsive">
@@ -44,22 +74,22 @@
                                             </td>
                                             <td>
                                                 @if($t->status == 'active')
-                                                    <span class="badge badge-success">Aktif</span>
+                                                    <span class="badge bg-success text-light">Aktif</span>
                                                 @elseif($t->status == 'expired')
-                                                    <span class="badge badge-danger">Expired</span>
+                                                    <span class="badge bg-danger text-light">Expired</span>
                                                 @else
-                                                    <span class="badge badge-secondary">Tidak Aktif</span>
+                                                    <span class="badge bg-secondary text-light">Tidak Aktif</span>
                                                 @endif
                                             </td>
                                             <td>
                                                 @if($t->auto_grade)
-                                                    <span class="badge badge-info">Ya</span>
+                                                    <span class="badge bg-info text-dark">Ya</span>
                                                 @else
-                                                    <span class="badge badge-warning">Tidak</span>
+                                                    <span class="badge bg-warning text-dark">Tidak</span>
                                                 @endif
                                             </td>
                                             <td>
-                                                <span class="badge badge-primary">{{ $t->jawabanMahasiswa->count() }}</span>
+                                                <span class="badge bg-primary text-light" style="font-size:1em; min-width:2.5em;">{{ $t->jawabanMahasiswa->count() }}</span>
                                             </td>
                                             <td>
                                                 <div class="btn-group" role="group">

@@ -62,7 +62,14 @@
                         <dd class="col-sm-8">{!! nl2br(e($tugas->rubrik_penilaian)) !!}</dd>
 
                         <dt class="col-sm-4">Deadline</dt>
-                        <dd class="col-sm-8">{{ $tugas->deadline->format('d/m/Y H:i') }} ({{ $tugas->deadline->diffForHumans() }})</dd>
+                        <dd class="col-sm-8">
+                            {{ $tugas->deadline->format('d/m/Y H:i') }}
+                            @if($tugas->deadline->isPast())
+                                <span class="text-danger">(Sudah lewat {{ $tugas->deadline->diffForHumans(null, null, true) }})</span>
+                            @else
+                                <span class="text-success">({{ $tugas->deadline->diffForHumans(null, null, true) }} lagi)</span>
+                            @endif
+                        </dd>
 
                         <dt class="col-sm-4">Durasi (Menit)</dt>
                         <dd class="col-sm-8">{{ $tugas->durasi_menit }}</dd>

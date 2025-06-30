@@ -391,58 +391,7 @@
 
                     <!-- Right Side Of Navbar -->
                     <ul class="navbar-nav ms-auto">
-                        @auth
-                            @if(Auth::user()->role_id == 2)
-                                <!-- Quick Action Button for Dosen -->
-                                <li class="nav-item me-2">
-                                    <a class="btn btn-primary btn-sm d-flex align-items-center gap-1" href="{{ route('dosen.tugas.create') }}" title="Buat Tugas Baru">
-                                        <i class="bi bi-plus-lg"></i>
-                                        <span class="d-none d-md-inline">Tugas Baru</span>
-                                    </a>
-                                </li>
-                                
-                                <!-- Notification Bell for Dosen -->
-                                <li class="nav-item dropdown me-2">
-                                    <a class="nav-link position-relative" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="bi bi-bell fs-5"></i>
-                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
-                                            3
-                                        </span>
-                                    </a>
-                                    <div class="dropdown-menu dropdown-menu-end shadow border-0" style="min-width: 300px; z-index: 1050;">
-                                        <div class="dropdown-header d-flex justify-content-between align-items-center">
-                                            <span class="fw-semibold">Notifikasi</span>
-                                            <a href="#" class="text-decoration-none small">Tandai semua dibaca</a>
-                                        </div>
-                                        <div class="dropdown-divider"></div>
-                                        <a class="dropdown-item d-flex align-items-start gap-2 p-3" href="#">
-                                            <div class="bg-primary rounded-circle p-1">
-                                                <i class="bi bi-journal-text text-white" style="font-size: 0.8rem;"></i>
-                                            </div>
-                                            <div class="flex-grow-1">
-                                                <div class="fw-semibold small">Tugas baru dikumpulkan</div>
-                                                <div class="text-muted small">Mahasiswa mengumpulkan tugas "Pemrograman Web"</div>
-                                                <div class="text-muted small">2 menit yang lalu</div>
-                                            </div>
-                                        </a>
-                                        <a class="dropdown-item d-flex align-items-start gap-2 p-3" href="#">
-                                            <div class="bg-success rounded-circle p-1">
-                                                <i class="bi bi-check-circle text-white" style="font-size: 0.8rem;"></i>
-                                            </div>
-                                            <div class="flex-grow-1">
-                                                <div class="fw-semibold small">Auto grading selesai</div>
-                                                <div class="text-muted small">15 jawaban berhasil dinilai otomatis</div>
-                                                <div class="text-muted small">1 jam yang lalu</div>
-                                            </div>
-                                        </a>
-                                        <div class="dropdown-divider"></div>
-                                        <a class="dropdown-item text-center text-primary" href="#">
-                                            Lihat semua notifikasi
-                                        </a>
-                                    </div>
-                                </li>
-                            @endif
-                        @endauth
+
                         
                         <!-- Authentication Links -->
                         @guest
@@ -463,12 +412,22 @@
                                     <div class="d-flex flex-column align-items-start d-none d-md-flex">
                                         <span class="fw-semibold">{{ Auth::user()->name }}</span>
                                         <small class="text-muted">
-                                            @if(Auth::user()->role_id == 1)
+                                            @if(Auth::user()->role && Auth::user()->role->name == 'admin')
                                                 Administrator
-                                            @elseif(Auth::user()->role_id == 2)
+                                            @elseif(Auth::user()->role && Auth::user()->role->name == 'dosen')
                                                 Dosen
-                                            @elseif(Auth::user()->role_id == 3)
+                                            @elseif(Auth::user()->role && Auth::user()->role->name == 'mahasiswa')
                                                 Mahasiswa
+                                            @else
+                                                @if(Auth::user()->role_id == 1)
+                                                    Administrator
+                                                @elseif(Auth::user()->role_id == 2)
+                                                    Dosen
+                                                @elseif(Auth::user()->role_id == 3)
+                                                    Mahasiswa
+                                                @else
+                                                    User
+                                                @endif
                                             @endif
                                         </small>
                                     </div>
@@ -502,13 +461,9 @@
                                             <span>Penilaian</span>
                                         </a>
                                         <div class="dropdown-divider"></div>
-                                        <a class="dropdown-item d-flex align-items-center gap-2" href="#">
+                                        <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('dosen.profile.index') }}">
                                             <i class="bi bi-person-gear"></i>
                                             <span>Profil</span>
-                                        </a>
-                                        <a class="dropdown-item d-flex align-items-center gap-2" href="#">
-                                            <i class="bi bi-gear"></i>
-                                            <span>Pengaturan</span>
                                         </a>
                                         <div class="dropdown-divider"></div>
                                     @elseif(Auth::user()->role_id == 3)
@@ -700,29 +655,6 @@
                 window.location.href = '{{ route("logout") }}';
             }
         }
-        
-        // Test function to verify dropdown is working
-        function testDropdown() {
-            console.log('Testing dropdown...');
-            const dropdown = document.getElementById('navbarDropdown');
-            const menu = dropdown ? dropdown.nextElementSibling : null;
-            
-            if (dropdown && menu) {
-                console.log('Dropdown found:', dropdown);
-                console.log('Menu found:', menu);
-                console.log('Menu classes:', menu.className);
-                
-                // Manually show dropdown for testing
-                menu.classList.add('show');
-                dropdown.setAttribute('aria-expanded', 'true');
-                console.log('Dropdown manually shown for testing');
-            } else {
-                console.log('Dropdown or menu not found');
-            }
-        }
-        
-        // Call test function after a delay
-        setTimeout(testDropdown, 3000);
         
         function toggleSidebar(force) {
             var sidebar = document.getElementById('sidebar');

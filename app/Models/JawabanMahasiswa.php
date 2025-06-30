@@ -76,15 +76,102 @@ class JawabanMahasiswa extends Model
         return sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
     }
     
-    // Nilai akhir total (sum nilai_final per soal dikali bobot, dibagi total bobot)
+    // Nilai akhir total (rata-rata tertimbang dari nilai_final PenilaianSoal)
     public function getNilaiAkhirAttribute()
     {
-        $totalBobot = $this->jawabanSoal->sum(function($js) { return $js->soal->bobot; });
-        if ($totalBobot == 0) return 0;
-        $total = $this->jawabanSoal->sum(function($js) {
-            $nilai = optional($js->penilaian)->nilai_final;
-            return ($nilai ?? 0) * $js->soal->bobot;
+        // Hitung nilai akhir berdasarkan PenilaianSoal (per soal)
+        $totalBobot = $this->jawabanSoal->sum(function($js) { 
+            return $js->soal->bobot ?? 1; // Default bobot 1 jika null
         });
-        return round($total / $totalBobot, 2);
+        
+        if ($totalBobot == 0) return 0;
+        
+        $totalNilai = $this->jawabanSoal->sum(function($js) {
+            $penilaian = $js->penilaian;
+            if (!$penilaian) return 0;
+            
+            // Ambil nilai final dari PenilaianSoal
+            $nilai = $penilaian->nilai_final ?? $penilaian->nilai_manual ?? $penilaian->nilai_ai ?? 0;
+            $bobot = $js->soal->bobot ?? 1;
+            
+            return $nilai * $bobot;
+        });
+        
+        $nilaiAkhir = round($totalNilai / $totalBobot, 2);
+        
+        // Pastikan nilai akhir tidak melebihi nilai maksimal tugas
+        $nilaiMaksimal = $this->tugas->nilai_maksimal ?? 100;
+        return min($nilaiAkhir, $nilaiMaksimal);
+    }
+    
+    // Cek apakah semua soal sudah dinilai
+    public function getIsAllGradedAttribute()
+    {
+        return $this->jawabanSoal->every(function($js) {
+            $penilaian = $js->penilaian;
+            return $penilaian && in_array($penilaian->status_penilaian, ['final', 'ai_graded']);
+        });
+    }
+    
+    // Hitung persentase kelengkapan penilaian
+    public function getGradingProgressAttribute()
+    {
+        $totalSoal = $this->jawabanSoal->count();
+        if ($totalSoal == 0) return 0;
+        
+        $gradedSoal = $this->jawabanSoal->filter(function($js) {
+            $penilaian = $js->penilaian;
+            return $penilaian && in_array($penilaian->status_penilaian, ['final', 'ai_graded']);
+        })->count();
+        
+        return round(($gradedSoal / $totalSoal) * 100, 2);
+    }
+    
+    // Get nilai AI dari PenilaianSoal (rata-rata tertimbang)
+    public function getNilaiAiAttribute()
+    {
+        $totalBobot = $this->jawabanSoal->sum(function($js) { 
+            return $js->soal->bobot ?? 1;
+        });
+        
+        if ($totalBobot == 0) return 0;
+        
+        $totalNilai = $this->jawabanSoal->sum(function($js) {
+            $penilaian = $js->penilaian;
+            if (!$penilaian || $penilaian->nilai_ai === null) return 0;
+            
+            $bobot = $js->soal->bobot ?? 1;
+            return $penilaian->nilai_ai * $bobot;
+        });
+        
+        $nilaiAi = round($totalNilai / $totalBobot, 2);
+        
+        // Pastikan nilai tidak melebihi nilai maksimal tugas
+        $nilaiMaksimal = $this->tugas->nilai_maksimal ?? 100;
+        return min($nilaiAi, $nilaiMaksimal);
+    }
+    
+    // Get nilai manual dari PenilaianSoal (rata-rata tertimbang)
+    public function getNilaiManualAttribute()
+    {
+        $totalBobot = $this->jawabanSoal->sum(function($js) { 
+            return $js->soal->bobot ?? 1;
+        });
+        
+        if ($totalBobot == 0) return 0;
+        
+        $totalNilai = $this->jawabanSoal->sum(function($js) {
+            $penilaian = $js->penilaian;
+            if (!$penilaian || $penilaian->nilai_manual === null) return 0;
+            
+            $bobot = $js->soal->bobot ?? 1;
+            return $penilaian->nilai_manual * $bobot;
+        });
+        
+        $nilaiManual = round($totalNilai / $totalBobot, 2);
+        
+        // Pastikan nilai tidak melebihi nilai maksimal tugas
+        $nilaiMaksimal = $this->tugas->nilai_maksimal ?? 100;
+        return min($nilaiManual, $nilaiMaksimal);
     }
 }

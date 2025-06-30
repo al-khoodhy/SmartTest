@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\MataKuliah;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use TCG\Voyager\Models\Role;
 
 class AdminDosenController extends Controller
 {
@@ -15,7 +16,9 @@ class AdminDosenController extends Controller
     public function create()
     {
         $mataKuliah = \App\Models\MataKuliah::all();
-        $mahasiswa = \App\Models\User::where('role_id', 3)->get();
+        $mahasiswa = \App\Models\User::whereHas('role', function($query) {
+            $query->where('name', 'mahasiswa');
+        })->get();
         $kelasList = \App\Models\Kelas::with('mataKuliah')->get();
         return view('admin.dosen.create', compact('mataKuliah', 'mahasiswa', 'kelasList'));
     }
@@ -43,11 +46,17 @@ class AdminDosenController extends Controller
         $request->validate($rules);
 
         DB::transaction(function () use ($request, $kelasMode) {
+            // Get dosen role
+            $dosenRole = Role::where('name', 'dosen')->first();
+            if (!$dosenRole) {
+                throw new \Exception('Role dosen tidak ditemukan');
+            }
+
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
                 'nim_nip' => $request->nim_nip,
-                'role_id' => 2,
+                'role_id' => $dosenRole->id,
                 'password' => bcrypt($request->password),
             ]);
 

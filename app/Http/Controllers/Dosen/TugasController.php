@@ -16,7 +16,7 @@ class TugasController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'role:2']);
+        $this->middleware(['auth', 'voyager.permission:manage_tugas']);
     }
     
     /**
@@ -71,7 +71,7 @@ class TugasController extends Controller
             'deskripsi' => 'required|string',
             'kelas_id' => 'required|exists:kelas,id',
             'deadline' => 'required|date|after:now',
-            'durasi_menit' => 'required|integer|min:30|max:480',
+            'durasi_menit' => 'required|integer|min:1|max:480',
             'nilai_maksimal' => 'required|integer|min:1|max:100',
             'rubrik_penilaian' => 'nullable|string',
             'auto_grade' => 'nullable',
@@ -163,7 +163,7 @@ class TugasController extends Controller
             'deskripsi' => 'required|string',
             'kelas_id' => 'required|exists:kelas,id',
             'deadline' => 'required|date',
-            'durasi_menit' => 'required|integer|min:30|max:480',
+            'durasi_menit' => 'required|integer|min:1|max:480',
             'nilai_maksimal' => 'required|integer|min:1|max:100',
             'rubrik_penilaian' => 'nullable|string',
             'auto_grade' => 'nullable',

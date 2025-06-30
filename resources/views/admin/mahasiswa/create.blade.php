@@ -53,7 +53,7 @@
 
                     <!-- Form Manual -->
                     <div id="manual-form">
-                        <form method="POST" action="{{ route('admin.mahasiswa.store') }}" onsubmit="return confirm('Yakin ingin menyimpan data mahasiswa ini?')">
+                        <form method="POST" action="{{ route('admin.mahasiswa.store') }}" id="formTambahMahasiswa">
                             @csrf
                             <div class="form-group">
                                 <label>Nama Lengkap</label>
@@ -88,7 +88,7 @@
                                 <input type="checkbox" class="form-check-input" id="is_active" name="is_active" value="1" {{ old('is_active', 1) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="is_active">Aktif</label>
                             </div> --}}
-                            <button type="submit" class="btn btn-primary">Simpan Mahasiswa</button>
+                            <button type="submit" class="btn btn-primary" id="btnSimpanMahasiswa">Simpan Mahasiswa</button>
                         </form>
                     </div>
                 </div>
@@ -106,7 +106,7 @@
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
       </div>
       <div class="modal-body" id="voyagerConfirmModalBody">
-        Apakah Anda yakin?
+        Yakin ingin menyimpan data mahasiswa ini?
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
@@ -137,42 +137,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Voyager style confirmation modal
+    // Voyager style confirmation modal untuk submit mahasiswa
     var voyagerModal = $('#voyagerConfirmModal');
-    var voyagerModalBody = document.getElementById('voyagerConfirmModalBody');
     var voyagerModalYes = document.getElementById('voyagerConfirmModalYes');
-    var formToSubmit = null;
-    
-    // Helper to show modal with custom message
-    function showVoyagerConfirm(message, form) {
-        voyagerModalBody.textContent = message;
-        formToSubmit = form;
-        voyagerModal.modal('show');
+    var formTambahMahasiswa = document.getElementById('formTambahMahasiswa');
+    var btnSimpanMahasiswa = document.getElementById('btnSimpanMahasiswa');
+    var mahasiswaFormToSubmit = null;
+    if(formTambahMahasiswa && btnSimpanMahasiswa) {
+        btnSimpanMahasiswa.addEventListener('click', function(e) {
+            e.preventDefault();
+            mahasiswaFormToSubmit = formTambahMahasiswa;
+            voyagerModal.modal('show');
+        });
     }
     voyagerModalYes.onclick = function() {
-        if(formToSubmit) {
-            formToSubmit.submit();
-            formToSubmit = null;
+        if(mahasiswaFormToSubmit) {
+            mahasiswaFormToSubmit.submit();
+            mahasiswaFormToSubmit = null;
             voyagerModal.modal('hide');
         }
     };
-
-    // Attach to import form
-    var importFormEl = document.querySelector('form[action*="mahasiswa/import"]');
-    if(importFormEl) {
-        importFormEl.addEventListener('submit', function(e) {
-            e.preventDefault();
-            showVoyagerConfirm('Yakin ingin mengimport data mahasiswa dari file ini?', this);
-        });
-    }
-    // Attach to manual form
-    var manualFormEl = document.querySelector('form[action*="mahasiswa/store"]');
-    if(manualFormEl) {
-        manualFormEl.addEventListener('submit', function(e) {
-            e.preventDefault();
-            showVoyagerConfirm('Yakin ingin menyimpan data mahasiswa ini?', this);
-        });
-    }
 });
 </script>
 @stop 

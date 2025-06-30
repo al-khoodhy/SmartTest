@@ -6,6 +6,7 @@ use App\Http\Controllers\Dosen\DosenController;
 use App\Http\Controllers\Mahasiswa\MahasiswaController;
 use Illuminate\Support\Facades\Auth;
 use TCG\Voyager\Facades\Voyager;
+use App\Http\Controllers\Auth\CustomVoyagerAuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,10 +19,10 @@ use TCG\Voyager\Facades\Voyager;
 |
 */
 
-// Landing page
 Route::get('/', function () {
-    return view('auth.login');
+    return redirect()->route('voyager.login');
 });
+
 
 // Authentication routes
 Auth::routes();
@@ -29,28 +30,28 @@ Auth::routes();
 // Main dashboard route (redirects based on role)
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-// Dosen routes
-Route::prefix('dosen')->name('dosen.')->middleware(['auth', 'role:2'])->group(function () {
+// Dosen routes - using Voyager permissions
+Route::prefix('dosen')->name('dosen.')->middleware(['auth', 'voyager.permission:browse_dosen_dashboard'])->group(function () {
     Route::get('/dashboard', [DosenController::class, 'dashboard'])->name('dashboard');
     
     // Mata Kuliah routes
     Route::resource('mata-kuliah', \App\Http\Controllers\Dosen\MataKuliahController::class)->parameters([
         'mata-kuliah' => 'mataKuliah'
-    ]);
+    ])->middleware('voyager.permission:manage_mata_kuliah');
     
     // Kelas routes
     Route::resource('kelas', \App\Http\Controllers\Dosen\KelasController::class)->parameters([
         'kelas' => 'kelas'
-    ]);
+    ])->middleware('voyager.permission:manage_kelas');
     
     // Tugas routes
     Route::resource('tugas', \App\Http\Controllers\Dosen\TugasController::class)->parameters([
         'tugas' => 'tugas'
-    ]);
+    ])->middleware('voyager.permission:manage_tugas');
     Route::patch('tugas/{tugas}/toggle-status', [\App\Http\Controllers\Dosen\TugasController::class, 'toggleStatus'])->name('tugas.toggle-status');
     
     // Penilaian routes
-    Route::prefix('penilaian')->name('penilaian.')->group(function () {
+    Route::prefix('penilaian')->name('penilaian.')->middleware('voyager.permission:view_penilaian')->group(function () {
         Route::get('/', [\App\Http\Controllers\Dosen\PenilaianController::class, 'index'])->name('index');
         Route::get('/tugas/{tugas}', [\App\Http\Controllers\Dosen\PenilaianController::class, 'showTugas'])->name('tugas');
         Route::get('/jawaban/{jawaban}', [\App\Http\Controllers\Dosen\PenilaianController::class, 'showJawaban'])->name('jawaban');
@@ -58,23 +59,29 @@ Route::prefix('dosen')->name('dosen.')->middleware(['auth', 'role:2'])->group(fu
         Route::post('/jawaban/{jawaban}/grade', [\App\Http\Controllers\Dosen\PenilaianController::class, 'storeGrade'])->name('store-grade');
         Route::post('/tugas/{tugas}/auto-grade', [\App\Http\Controllers\Dosen\PenilaianController::class, 'autoGrade'])->name('auto-grade');
         Route::post('/jawaban/{jawaban}/regrade', [\App\Http\Controllers\Dosen\PenilaianController::class, 'regrade'])->name('regrade');
-        Route::get('/tugas/{tugas}/export', [\App\Http\Controllers\Dosen\PenilaianController::class, 'exportNilai'])->name('export');
+        Route::get('/tugas/{tugas}/export', [\App\Http\Controllers\Dosen\PenilaianController::class, 'exportNilai'])->name('export')->middleware('voyager.permission:export_nilai');
     });
+
+    Route::get('profile', [\App\Http\Controllers\Dosen\ProfileController::class, 'index'])->name('profile.index');
+    Route::get('profile/edit', [\App\Http\Controllers\Dosen\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::post('profile/update', [\App\Http\Controllers\Dosen\ProfileController::class, 'update'])->name('profile.update');
+    Route::get('profile/change-password', [\App\Http\Controllers\Dosen\ProfileController::class, 'changePassword'])->name('profile.change-password');
+    Route::post('profile/update-password', [\App\Http\Controllers\Dosen\ProfileController::class, 'updatePassword'])->name('profile.update-password');
 });
 
-// Mahasiswa routes
-Route::prefix('mahasiswa')->name('mahasiswa.')->middleware(['auth', 'role:3'])->group(function () {
+// Mahasiswa routes - using Voyager permissions
+Route::prefix('mahasiswa')->name('mahasiswa.')->middleware(['auth', 'voyager.permission:browse_mahasiswa_dashboard'])->group(function () {
     Route::get('/dashboard', [MahasiswaController::class, 'dashboard'])->name('dashboard');
     
     // Tugas routes
-    Route::prefix('tugas')->name('tugas.')->group(function () {
+    Route::prefix('tugas')->name('tugas.')->middleware('voyager.permission:view_tugas')->group(function () {
         Route::get('/', [\App\Http\Controllers\Mahasiswa\TugasController::class, 'index'])->name('index');
         Route::get('/{tugas}', [\App\Http\Controllers\Mahasiswa\TugasController::class, 'show'])->name('show');
-        Route::post('/{tugas}/start', [\App\Http\Controllers\Mahasiswa\TugasController::class, 'start'])->name('start');
+        Route::post('/{tugas}/start', [\App\Http\Controllers\Mahasiswa\TugasController::class, 'start'])->name('start')->middleware('voyager.permission:submit_tugas');
     });
     
     // Ujian routes
-    Route::prefix('ujian')->name('ujian.')->group(function () {
+    Route::prefix('ujian')->name('ujian.')->middleware('voyager.permission:take_ujian')->group(function () {
         Route::get('/', [\App\Http\Controllers\Mahasiswa\UjianController::class, 'index'])->name('index');
         Route::get('/{jawaban}/work', [\App\Http\Controllers\Mahasiswa\UjianController::class, 'work'])->name('work');
         Route::post('/{jawaban}/save-draft', [\App\Http\Controllers\Mahasiswa\UjianController::class, 'saveDraft'])->name('save-draft');
@@ -83,7 +90,7 @@ Route::prefix('mahasiswa')->name('mahasiswa.')->middleware(['auth', 'role:3'])->
     });
     
     // Nilai routes
-    Route::prefix('nilai')->name('nilai.')->group(function () {
+    Route::prefix('nilai')->name('nilai.')->middleware('voyager.permission:view_nilai')->group(function () {
         Route::get('/', [\App\Http\Controllers\Mahasiswa\NilaiController::class, 'index'])->name('index');
         Route::get('/{jawaban}', [\App\Http\Controllers\Mahasiswa\NilaiController::class, 'show'])->name('show');
         Route::get('/per/mata-kuliah', [\App\Http\Controllers\Mahasiswa\NilaiController::class, 'perMataKuliah'])->name('per-mata-kuliah');
@@ -93,6 +100,8 @@ Route::prefix('mahasiswa')->name('mahasiswa.')->middleware(['auth', 'role:3'])->
 // Admin routes (Voyager)
 Route::group(['prefix' => 'admin'], function () {
     Voyager::routes();
+    // Override POST login agar redirect sesuai role
+    Route::post('login', [CustomVoyagerAuthController::class, 'postLogin'])->name('voyager.postlogin');
 });
 
 // Redirect after login
@@ -102,7 +111,8 @@ Auth::routes();
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
-Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'role:1']], function () {
+// Admin routes for managing users - using Voyager permissions
+Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'voyager.permission:browse_users,add_users,edit_users']], function () {
     // Pendaftaran Dosen + Mata Kuliah
     Route::get('/dosen/create', [\App\Http\Controllers\Admin\AdminDosenController::class, 'create'])->name('admin.dosen.create');
     Route::post('/dosen', [\App\Http\Controllers\Admin\AdminDosenController::class, 'store'])->name('admin.dosen.store');

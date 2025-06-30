@@ -169,8 +169,8 @@
                                                     <p class="mb-1">{{ $jawaban->tugas->mataKuliah->nama_mk }}</p>
                                                     <div class="d-flex justify-content-between align-items-center">
                                                         <small>Nilai: 
-                                                            <span class="badge badge-{{ $jawaban->penilaian->nilai_final >= 75 ? 'success' : ($jawaban->penilaian->nilai_final >= 60 ? 'warning' : 'danger') }}">
-                                                                {{ $jawaban->penilaian->nilai_final }}
+                                                            <span class="badge badge-{{ $jawaban->nilai_akhir >= 75 ? 'success' : ($jawaban->nilai_akhir >= 60 ? 'warning' : 'danger') }}">
+                                                                {{ $jawaban->nilai_akhir }}
                                                             </span>
                                                         </small>
                                                         <a href="{{ route('mahasiswa.nilai.show', $jawaban) }}" class="btn btn-sm btn-outline-primary">

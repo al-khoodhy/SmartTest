@@ -9,6 +9,34 @@
                     <h4>Kelola Penilaian Tugas</h4>
                 </div>
                 <div class="card-body">
+                    <!-- Filter Form -->
+                    <form class="mb-4" method="GET">
+                        <div class="row align-items-end">
+                            <div class="col-md-4">
+                                <label for="kelas_id">Mata Kuliah/Kelas</label>
+                                <select name="kelas_id" id="kelas_id" class="form-control">
+                                    <option value="">Semua</option>
+                                    @foreach($kelas as $k)
+                                        <option value="{{ $k->id }}" {{ request('kelas_id') == $k->id ? 'selected' : '' }}>
+                                            {{ $k->mataKuliah->nama_mk ?? '-' }} - {{ $k->nama_kelas }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="status_penilaian">Status Penilaian</label>
+                                <select name="status_penilaian" id="status_penilaian" class="form-control">
+                                    <option value="">Semua</option>
+                                    <option value="graded" {{ request('status_penilaian') == 'graded' ? 'selected' : '' }}>Sudah Dinilai</option>
+                                    <option value="pending" {{ request('status_penilaian') == 'pending' ? 'selected' : '' }}>Menunggu Penilaian</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="btn btn-primary">Filter</button>
+                                <a href="{{ route('dosen.penilaian.index') }}" class="btn btn-secondary">Reset</a>
+                            </div>
+                        </div>
+                    </form>
                     @if($tugas->count() > 0)
                         <div class="table-responsive">
                             <table class="table table-striped">
@@ -17,6 +45,7 @@
                                         <th>No</th>
                                         <th>Nama Tugas</th>
                                         <th>Mata Kuliah</th>
+                                        <th>Status Penilaian</th>
                                         <th>Jumlah Jawaban</th>
                                         <th>Aksi</th>
                                     </tr>
@@ -32,7 +61,26 @@
                                             </td>
                                             <td>{{ $t->mataKuliah->nama_mk ?? '-' }}</td>
                                             <td>
-                                                <span class="badge badge-primary">{{ $t->jawabanMahasiswa->count() }}</span>
+                                                @php
+                                                    $totalJawaban = $t->jawabanMahasiswa->count();
+                                                    $gradedJawaban = $t->jawabanMahasiswa->where('status', 'graded')->count();
+                                                    $aiGradedJawaban = $t->jawabanMahasiswa->filter(function($jawaban) {
+                                                        return $jawaban->penilaian && $jawaban->penilaian->status_penilaian === 'ai_graded';
+                                                    })->count();
+                                                @endphp
+                                                
+                                                @if($totalJawaban == 0)
+                                                    <span class="badge bg-secondary text-light">Belum Ada Jawaban</span>
+                                                @elseif($gradedJawaban == $totalJawaban)
+                                                    <span class="badge bg-success text-light">Semua Sudah Dinilai</span>
+                                                @elseif($t->auto_grade && $aiGradedJawaban > 0)
+                                                    <span class="badge bg-info text-dark">{{ $aiGradedJawaban }}/{{ $totalJawaban }} AI Graded</span>
+                                                @else
+                                                    <span class="badge bg-warning text-dark">{{ $gradedJawaban }}/{{ $totalJawaban }} Dinilai</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-primary text-light" style="font-size:1em; min-width:2.5em;">{{ $totalJawaban }}</span>
                                             </td>
                                             <td>
                                                 <a href="{{ route('dosen.penilaian.tugas', ['tugas' => $t->id]) }}" class="btn btn-sm btn-info" title="Detail Penilaian">

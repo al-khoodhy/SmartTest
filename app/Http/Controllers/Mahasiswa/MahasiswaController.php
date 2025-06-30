@@ -7,20 +7,26 @@ use App\Models\Enrollment;
 use App\Models\Tugas;
 use App\Models\JawabanMahasiswa;
 use App\Models\MataKuliah;
+use App\Models\Kelas;
 use Illuminate\Http\Request;
 
 class MahasiswaController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'role:3']);
+        $this->middleware(['auth', 'voyager.permission:browse_mahasiswa_dashboard']);
     }
     
     public function dashboard()
     {
         $mahasiswa = auth()->user();
-        $kelasIds = $mahasiswa->enrollments()->active()->pluck('kelas_id');
-        $tugasTerbaru = \App\Models\Tugas::whereIn('kelas_id', $kelasIds)
+        
+        // Get kelas IDs dari enrollment
+        $kelasIds = Enrollment::where('mahasiswa_id', $mahasiswa->id)
+            ->where('status', 'active')
+            ->pluck('kelas_id');
+            
+        $tugasTerbaru = Tugas::whereIn('kelas_id', $kelasIds)
             ->with('kelas.mataKuliah')
             ->active()
             ->available()
@@ -28,18 +34,25 @@ class MahasiswaController extends Controller
             ->take(5)
             ->get();
         $tugasTersedia = $tugasTerbaru->count();
-        $tugasSelesai = $mahasiswa->jawabanMahasiswa()->whereIn('status', ['submitted', 'graded'])->count();
-        $rataRataNilai = $mahasiswa->jawabanMahasiswa()
+        
+        // Get jawaban mahasiswa
+        $tugasSelesai = JawabanMahasiswa::where('mahasiswa_id', $mahasiswa->id)
+            ->whereIn('status', ['submitted', 'graded'])
+            ->count();
+            
+        $rataRataNilai = JawabanMahasiswa::where('mahasiswa_id', $mahasiswa->id)
             ->whereHas('penilaian')
-            ->join('penilaian', 'jawaban_mahasiswa.id', '=', 'penilaian.jawaban_id')
-            ->avg('penilaian.nilai_final') ?? 0;
-        $nilaiTerbaru = $mahasiswa->jawabanMahasiswa()
+            ->get()
+            ->avg('nilai_akhir') ?? 0;
+            
+        $nilaiTerbaru = JawabanMahasiswa::where('mahasiswa_id', $mahasiswa->id)
             ->with(['tugas.kelas.mataKuliah', 'penilaian'])
             ->whereHas('penilaian')
             ->latest()
             ->take(5)
             ->get();
-        $totalMataKuliah = \App\Models\Kelas::whereIn('id', $kelasIds)->distinct('mata_kuliah_id')->count('mata_kuliah_id');
+            
+        $totalMataKuliah = Kelas::whereIn('id', $kelasIds)->distinct('mata_kuliah_id')->count('mata_kuliah_id');
         return view('mahasiswa.dashboard', compact(
             'totalMataKuliah',
             'tugasTersedia',
@@ -52,8 +65,10 @@ class MahasiswaController extends Controller
     
     private function getTugasAktif($mahasiswa)
     {
-        $kelasIds = $mahasiswa->enrollments()->active()->pluck('kelas_id');
-        $tugasDikerjakan = $mahasiswa->jawabanMahasiswa()->pluck('tugas_id');
+        $kelasIds = Enrollment::where('mahasiswa_id', $mahasiswa->id)
+            ->where('status', 'active')
+            ->pluck('kelas_id');
+        $tugasDikerjakan = JawabanMahasiswa::where('mahasiswa_id', $mahasiswa->id)->pluck('tugas_id');
         return Tugas::whereIn('kelas_id', $kelasIds)
             ->active()
             ->available()

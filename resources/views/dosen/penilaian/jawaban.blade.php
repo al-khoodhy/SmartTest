@@ -1,9 +1,49 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+    .feedback-content {
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+    
+    .feedback-content::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .feedback-content::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+    
+    .feedback-content::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+    }
+    
+    .feedback-content::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+    
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    @media (max-width: 768px) {
+        .table-responsive table {
+            font-size: 0.85em;
+        }
+        
+        .feedback-content {
+            max-height: 200px !important;
+        }
+    }
+</style>
+
 <div class="container">
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-md-10">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4>Detail Jawaban Mahasiswa</h4>
@@ -12,13 +52,39 @@
                     </a>
                 </div>
                 <div class="card-body">
+                    <!-- Informasi Mahasiswa dan Tugas -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Informasi Mahasiswa</h5>
                     <dl class="row">
-                        <dt class="col-sm-4">Nama Mahasiswa</dt>
+                                <dt class="col-sm-4">Nama</dt>
                         <dd class="col-sm-8">{{ $jawaban->mahasiswa->name ?? '-' }}</dd>
+                                <dt class="col-sm-4">NIM</dt>
+                                <dd class="col-sm-8">{{ $jawaban->mahasiswa->nim ?? '-' }}</dd>
+                                <dt class="col-sm-4">Email</dt>
+                                <dd class="col-sm-8">{{ $jawaban->mahasiswa->email ?? '-' }}</dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Informasi Tugas</h5>
+                            <dl class="row">
+                                <dt class="col-sm-4">Mata Kuliah</dt>
+                                <dd class="col-sm-8">{{ $jawaban->tugas->mataKuliah->nama_mk ?? '-' }}</dd>
+                                <dt class="col-sm-4">Kelas</dt>
+                                <dd class="col-sm-8">{{ $jawaban->tugas->kelas->nama_kelas ?? '-' }}</dd>
                         <dt class="col-sm-4">Judul Tugas</dt>
                         <dd class="col-sm-8">{{ $jawaban->tugas->judul ?? '-' }}</dd>
-                        <dt class="col-sm-4">Mata Kuliah</dt>
-                        <dd class="col-sm-8">{{ $jawaban->tugas->mataKuliah->nama_mk ?? '-' }}</dd>
+                                <dt class="col-sm-4">Nilai Maksimal</dt>
+                                <dd class="col-sm-8">{{ $jawaban->tugas->nilai_maksimal ?? 100 }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <!-- Status dan Informasi Pengerjaan -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Status Pengerjaan</h5>
+                            <dl class="row">
                         <dt class="col-sm-4">Status</dt>
                         <dd class="col-sm-8">
                             @if($jawaban->status == 'graded')
@@ -29,40 +95,191 @@
                                 <span class="badge bg-secondary">{{ ucfirst($jawaban->status) }}</span>
                             @endif
                         </dd>
-                        <dt class="col-sm-4">Jawaban Mahasiswa</dt>
-                        <dd class="col-sm-8"><div class="border p-2 bg-light">{!! nl2br(e($jawaban->jawaban)) !!}</div></dd>
-                        <dt class="col-sm-4">Jawaban Per Soal</dt>
+                                <dt class="col-sm-4">Tanggal Submit</dt>
+                                <dd class="col-sm-8">{{ $jawaban->waktu_selesai ? $jawaban->waktu_selesai->format('d/m/Y H:i') : '-' }}</dd>
+                                <dt class="col-sm-4">Durasi Pengerjaan</dt>
+                                <dd class="col-sm-8">{{ $jawaban->durasi_format ?? '-' }}</dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Informasi Penilaian</h5>
+                            <dl class="row">
+                                <dt class="col-sm-4">Total Soal</dt>
+                                <dd class="col-sm-8">{{ $jawaban->jawabanSoal->count() }} soal</dd>
+                                <dt class="col-sm-4">Total Bobot</dt>
+                                <dd class="col-sm-8">{{ $jawaban->jawabanSoal->sum(function($js) { return $js->soal->bobot ?? 1; }) }} poin</dd>
+                                @if($jawaban->status === 'graded')
+                                    <dt class="col-sm-4">Progress Penilaian</dt>
                         <dd class="col-sm-8">
-                            <ol>
-                                @foreach($jawaban->jawabanSoal as $jawabanSoal)
-                                    <li class="mb-2">
-                                        <div><strong>Pertanyaan:</strong> {{ $jawabanSoal->soal->pertanyaan ?? '-' }}</div>
-                                        <div><strong>Jawaban:</strong> {!! nl2br(e($jawabanSoal->jawaban)) !!}</div>
-                                        @if($jawabanSoal->penilaian)
-                                            <div><strong>Nilai Manual:</strong> {{ $jawabanSoal->penilaian->nilai_manual ?? '-' }}</div>
-                                            <div><strong>Feedback Manual:</strong> {{ $jawabanSoal->penilaian->feedback_manual ?? '-' }}</div>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-success" role="progressbar" 
+                                                 style="width: {{ $jawaban->grading_progress }}%">
+                                                {{ $jawaban->grading_progress }}%
+                                            </div>
+                                        </div>
+                                    </dd>
+                                @endif
+                            </dl>
+                        </div>
+                    </div>
+
+                    <!-- Nilai Akhir -->
+                    @if($jawaban->status === 'graded')
+                        <div class="alert alert-success mb-4">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <h4 class="mb-0">Nilai Akhir: <span class="badge bg-success fs-4">{{ $jawaban->nilai_akhir }}</span></h4>
+                                    <small class="text-muted">
+                                        @if($jawaban->is_all_graded)
+                                            ✅ Semua soal sudah dinilai
+                                        @else
+                                            ⚠️ Progress: {{ $jawaban->grading_progress }}% ({{ $jawaban->jawabanSoal->filter(function($js) { return $js->penilaian && in_array($js->penilaian->status_penilaian, ['final', 'ai_graded']); })->count() }}/{{ $jawaban->jawabanSoal->count() }} soal)
                                         @endif
-                                    </li>
-                                @endforeach
-                            </ol>
-                        </dd>
-                        @if($jawaban->penilaian)
-                            <dt class="col-sm-4">Nilai AI</dt>
-                            <dd class="col-sm-8">{{ $jawaban->penilaian->nilai_ai ?? '-' }}</dd>
-                            <dt class="col-sm-4">Nilai Final</dt>
-                            <dd class="col-sm-8">{{ $jawaban->penilaian->nilai_final ?? '-' }}</dd>
-                            <dt class="col-sm-4">Feedback AI</dt>
-                            <dd class="col-sm-8">{{ $jawaban->penilaian->feedback_ai ?? '-' }}</dd>
+                                    </small>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    @if($jawaban->nilai_akhir >= 75)
+                                        <span class="badge bg-success fs-6">Sangat Baik</span>
+                                    @elseif($jawaban->nilai_akhir >= 60)
+                                        <span class="badge bg-warning fs-6">Baik</span>
+                                    @else
+                                        <span class="badge bg-danger fs-6">Perlu Perbaikan</span>
                         @endif
-                        @if($jawaban->status === 'graded')
-                            <div class="alert alert-success">
-                                <strong>Nilai Akhir (total): {{ $jawaban->nilai_akhir }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    <!-- Detail Jawaban Per Soal -->
+                    <h5>Detail Jawaban Per Soal</h5>
+                    <div class="table-responsive mb-4">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th width="5%">No</th>
+                                    <th width="20%">Soal</th>
+                                    <th width="8%">Bobot</th>
+                                    <th width="25%">Jawaban Mahasiswa</th>
+                                    <th width="8%">Nilai</th>
+                                    <th width="10%">Status</th>
+                                    <th width="24%">Feedback</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($jawaban->jawabanSoal as $index => $jawabanSoal)
+                                    <tr>
+                                        <td>{{ $index + 1 }}</td>
+                                        <td>
+                                            <strong>{{ $jawabanSoal->soal->pertanyaan ?? '-' }}</strong>
+                                        </td>
+                                        <td>{{ $jawabanSoal->soal->bobot ?? 1 }}</td>
+                                        <td>
+                                            <div class="border p-2 bg-light" style="max-height: 150px; overflow-y: auto;">
+                                                {!! nl2br(e($jawabanSoal->jawaban)) !!}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @if($jawabanSoal->penilaian)
+                                                <span class="badge bg-primary">{{ $jawabanSoal->penilaian->nilai_final ?? $jawabanSoal->penilaian->nilai_manual ?? $jawabanSoal->penilaian->nilai_ai ?? 0 }}</span>
+                                            @else
+                                                <span class="badge bg-secondary">-</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($jawabanSoal->penilaian)
+                                                @if($jawabanSoal->penilaian->status_penilaian == 'final')
+                                                    <span class="badge bg-success">Manual</span>
+                                                @elseif($jawabanSoal->penilaian->status_penilaian == 'ai_graded')
+                                                    <span class="badge bg-info">AI</span>
+                                                @else
+                                                    <span class="badge bg-warning">{{ ucfirst($jawabanSoal->penilaian->status_penilaian) }}</span>
+                                                @endif
+                                            @else
+                                                <span class="badge bg-secondary">Belum Dinilai</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($jawabanSoal->penilaian)
+                                                @if($jawabanSoal->penilaian->feedback_manual)
+                                                    <div class="mb-2">
+                                                        <small class="text-success fw-bold">
+                                                            <i class="bi bi-person-check"></i> Manual:
+                                                        </small>
+                                                        <div class="mt-1 p-2 bg-light border-start border-success border-3" style="max-height: 100px; overflow-y: auto;">
+                                                            {!! nl2br(e($jawabanSoal->penilaian->feedback_manual)) !!}
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                                @if($jawabanSoal->penilaian->feedback_ai)
+                                                    <div>
+                                                        <small class="text-primary fw-bold">
+                                                            <i class="bi bi-robot"></i> AI:
+                                                        </small>
+                                                        <div class="mt-1 p-2 bg-light border-start border-primary border-3" style="max-height: 100px; overflow-y: auto;">
+                                                            {!! nl2br(e($jawabanSoal->penilaian->feedback_ai)) !!}
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                                @if(!$jawabanSoal->penilaian->feedback_manual && !$jawabanSoal->penilaian->feedback_ai)
+                                                    <span class="text-muted">-</span>
+                                                @endif
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="7" class="text-center">Tidak ada soal yang tersedia.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Feedback Keseluruhan -->
+                    @if($jawaban->penilaian)
+                        <h5>Feedback Keseluruhan</h5>
+                        <div class="row mb-4">
+                            @if($jawaban->penilaian->feedback_ai)
+                                <div class="col-md-6 mb-3">
+                                    <div class="card border-primary h-100">
+                                        <div class="card-header bg-primary text-white">
+                                            <i class="bi bi-robot"></i> Feedback AI
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="feedback-content" style="max-height: 400px; overflow-y: auto;">
+                                                {!! nl2br(e($jawaban->penilaian->feedback_ai)) !!}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                            @if($jawaban->penilaian->feedback_manual)
+                                <div class="col-md-6 mb-3">
+                                    <div class="card border-success h-100">
+                                        <div class="card-header bg-success text-white">
+                                            <i class="bi bi-person-check"></i> Feedback Dosen
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="feedback-content" style="max-height: 400px; overflow-y: auto;">
+                                                {!! nl2br(e($jawaban->penilaian->feedback_manual)) !!}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
                             </div>
                         @endif
-                    </dl>
-                    <div class="mt-3">
-                        <a href="{{ route('dosen.penilaian.grade', $jawaban) }}" class="btn btn-success">Nilai Jawaban</a>
-                        <a href="{{ route('dosen.penilaian.tugas', $jawaban->tugas) }}" class="btn btn-secondary">Kembali</a>
+
+                    <!-- Tombol Aksi -->
+                    <div class="text-center mt-4">
+                        <a href="{{ route('dosen.penilaian.grade', $jawaban) }}" class="btn btn-success">
+                            <i class="fas fa-edit"></i> Nilai Jawaban
+                        </a>
+                        <a href="{{ route('dosen.penilaian.tugas', $jawaban->tugas) }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Kembali ke Daftar Jawaban
+                        </a>
                     </div>
                 </div>
             </div>

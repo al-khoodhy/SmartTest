@@ -13,7 +13,7 @@ class KelasController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'role:2']);
+        $this->middleware(['auth', 'voyager.permission:manage_kelas']);
     }
     
     /**

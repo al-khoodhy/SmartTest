@@ -48,7 +48,7 @@ class GeminiService
             
             if ($response->successful()) {
                 $result = $response->json();
-                return $this->parseGradingResponse($result);
+                return $this->parseGradingResponse($result, $nilaiMaksimal);
             } else {
                 Log::error('Gemini API Error: ' . $response->body());
                 throw new Exception('Gagal menghubungi Gemini API: ' . $response->status());
@@ -97,7 +97,7 @@ class GeminiService
     /**
      * Parse response dari Gemini API
      */
-    private function parseGradingResponse($response)
+    private function parseGradingResponse($response, $nilaiMaksimal)
     {
         try {
             $text = $response['candidates'][0]['content']['parts'][0]['text'] ?? '';
@@ -105,6 +105,12 @@ class GeminiService
             // Parse nilai
             preg_match('/NILAI:\s*(\d+(?:\.\d+)?)/i', $text, $nilaiMatches);
             $nilai = isset($nilaiMatches[1]) ? (float) $nilaiMatches[1] : 0;
+            
+            // Pastikan nilai tidak melebihi nilai maksimal (default 100)
+            if ($nilai > $nilaiMaksimal) {
+                $nilai = $nilaiMaksimal;
+                Log::warning("Nilai AI melebihi nilai maksimal, dibatasi ke: {$nilaiMaksimal}");
+            }
             
             // Parse feedback
             preg_match('/FEEDBACK:\s*(.*?)(?=KELEBIHAN:|$)/is', $text, $feedbackMatches);

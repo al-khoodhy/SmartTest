@@ -103,19 +103,22 @@ class User extends \TCG\Voyager\Models\User
     // Check apakah user adalah admin
     public function isAdmin()
     {
-        return $this->role_id == 1;
+        $this->loadMissing('role');
+        return $this->role && $this->role->name === 'admin';
     }
     
     // Check apakah user adalah dosen
     public function isDosen()
     {
-        return $this->role_id == 2;
+        $this->loadMissing('role');
+        return $this->role && $this->role->name === 'dosen';
     }
     
     // Check apakah user adalah mahasiswa
     public function isMahasiswa()
     {
-        return $this->role_id == 3;
+        $this->loadMissing('role');
+        return $this->role && $this->role->name === 'mahasiswa';
     }
 
 }

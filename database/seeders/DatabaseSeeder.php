@@ -20,27 +20,15 @@ class DatabaseSeeder extends Seeder
         // ]);
 
         $this->call([
-            RolesTableSeeder::class,
-            PermissionsTableSeeder::class,
-            PermissionRoleTableSeeder::class,
-            MenusTableSeeder::class,
-            MenuItemsTableSeeder::class,
-            DataTypesTableSeeder::class,
-            DataRowsTableSeeder::class,
-            UsersTableSeeder::class,
+            VoyagerDatabaseSeeder::class,
+            CustomPermissionsSeeder::class,
             UserSeeder::class,
             MataKuliahSeeder::class,
             KelasSeeder::class,
-            EnrollmentSeeder::class,
             TugasSeeder::class,
+            EnrollmentSeeder::class,
             JawabanMahasiswaSeeder::class,
             PenilaianSeeder::class,
-            CategoriesTableSeeder::class,
-            SettingsTableSeeder::class,
-            PagesTableSeeder::class,
-            PostsTableSeeder::class,
-            TranslationsTableSeeder::class,
-            VoyagerDummyDatabaseSeeder::class,
         ]);
     }
 }

@@ -16,16 +16,15 @@ class DashboardController extends Controller
         $user = auth()->user();
         
         // Redirect berdasarkan role user
-        switch ($user->role_id) {
-            case 1:
-                return redirect()->route('voyager.dashboard');
-            case 2:
-                return redirect()->route('dosen.dashboard');
-            case 3:
-                return redirect()->route('mahasiswa.dashboard');
-            default:
-                auth()->logout();
-                return redirect()->route('login')->with('error', 'Role tidak valid.');
+        if ($user->isAdmin()) {
+            return redirect()->route('voyager.dashboard');
+        } elseif ($user->isDosen()) {
+            return redirect()->route('dosen.dashboard');
+        } elseif ($user->isMahasiswa()) {
+            return redirect()->route('mahasiswa.dashboard');
+        } else {
+            auth()->logout();
+            return redirect()->route('login')->with('error', 'Role tidak valid.');
         }
     }
 }

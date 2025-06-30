@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Kelas;
 use App\Models\Enrollment;
 use Illuminate\Support\Facades\DB;
+use TCG\Voyager\Models\Role;
 
 class AdminMahasiswaController extends Controller
 {
@@ -31,11 +32,17 @@ class AdminMahasiswaController extends Controller
         ]);
 
         DB::transaction(function () use ($request) {
+            // Get mahasiswa role
+            $mahasiswaRole = Role::where('name', 'mahasiswa')->first();
+            if (!$mahasiswaRole) {
+                throw new \Exception('Role mahasiswa tidak ditemukan');
+            }
+
             $mahasiswa = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
                 'nim_nip' => $request->nim_nip,
-                'role_id' => 3,
+                'role_id' => $mahasiswaRole->id,
                 'password' => bcrypt($request->password),
             ]);
             foreach (array_filter($request->kelas_ids) as $kelasId) {
@@ -71,6 +78,12 @@ class AdminMahasiswaController extends Controller
         $failCount = 0;
         $failMessages = [];
 
+        // Get mahasiswa role
+        $mahasiswaRole = Role::where('name', 'mahasiswa')->first();
+        if (!$mahasiswaRole) {
+            return back()->withErrors(['csv_file' => 'Role mahasiswa tidak ditemukan']);
+        }
+
         DB::beginTransaction();
         try {
             foreach ($rows as $i => $row) {
@@ -90,7 +103,7 @@ class AdminMahasiswaController extends Controller
                     'name' => $name,
                     'email' => $email,
                     'nim_nip' => $nim,
-                    'role_id' => 3,
+                    'role_id' => $mahasiswaRole->id,
                     'password' => bcrypt($password),
                 ]);
                 foreach ($request->kelas_ids as $kelasId) {

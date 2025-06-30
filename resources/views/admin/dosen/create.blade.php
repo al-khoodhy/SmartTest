@@ -24,7 +24,7 @@
                                 </ul>
                             </div>
                         @endif
-                        <form method="POST" action="{{ route('admin.dosen.store') }}" onsubmit="return confirm('Yakin ingin menyimpan data dosen dan kelas ini?')">
+                        <form method="POST" action="{{ route('admin.dosen.store') }}" id="formTambahDosen">
                             @csrf
                             <h5>Data Dosen</h5>
                             <div class="form-group">
@@ -96,7 +96,7 @@
                                     <small class="form-text text-muted">Pilih satu atau lebih kelas yang sudah ada untuk diampu dosen ini.</small>
                                 </div>
                             </div>
-                            <button type="submit" class="btn btn-primary">Simpan Dosen & Kelas</button>
+                            <button type="submit" class="btn btn-primary" id="btnSimpanDosen">Simpan Dosen & Kelas</button>
                         </form>
                     </div>
                 </div>
@@ -109,16 +109,17 @@
 <div class="modal fade" id="voyagerConfirmModal" tabindex="-1" role="dialog" aria-labelledby="voyagerConfirmModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header bg-danger text-white">
-        <h5 class="modal-title" id="voyagerConfirmModalLabel"><i class="voyager-warning"></i> Konfirmasi</h5>
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="voyagerConfirmModalLabel"><i class="voyager-person"></i> Konfirmasi Simpan Dosen & Kelas</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
       </div>
       <div class="modal-body" id="voyagerConfirmModalBody">
-        Apakah Anda yakin?
+        Apakah Anda yakin ingin menyimpan data dosen beserta kelas dan mata kuliah yang diampu?<br>
+        Pastikan semua data sudah benar sebelum melanjutkan.
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
-        <button type="button" class="btn btn-danger" id="voyagerConfirmModalYes">Ya</button>
+        <button type="button" class="btn btn-primary" id="voyagerConfirmModalYes">Ya, Simpan</button>
       </div>
     </div>
   </div>
@@ -147,11 +148,8 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.remove-kelas').forEach(btn => {
             btn.style.display = '';
             btn.onclick = function() {
-                // Voyager style confirmation for delete kelas
-                showVoyagerConfirm('Yakin ingin menghapus kelas ini?', function() {
-                    btn.closest('.kelas-item').remove();
-                    updateRemoveButtons();
-                });
+                btn.closest('.kelas-item').remove();
+                updateRemoveButtons();
             };
         });
         // Sembunyikan tombol hapus jika hanya satu kelas
@@ -160,33 +158,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     updateRemoveButtons();
-
-    // Voyager style confirmation modal
-    var voyagerModal = $('#voyagerConfirmModal');
-    var voyagerModalBody = document.getElementById('voyagerConfirmModalBody');
-    var voyagerModalYes = document.getElementById('voyagerConfirmModalYes');
-    var confirmCallback = null;
-    function showVoyagerConfirm(message, callback) {
-        voyagerModalBody.textContent = message;
-        confirmCallback = callback;
-        voyagerModal.modal('show');
-    }
-    voyagerModalYes.onclick = function() {
-        if(confirmCallback) {
-            confirmCallback();
-            confirmCallback = null;
-            voyagerModal.modal('hide');
-        }
-    };
-
-    // Attach to form submit
-    var formEl = document.querySelector('form[action*="dosen/store"]');
-    if(formEl) {
-        formEl.addEventListener('submit', function(e) {
-            e.preventDefault();
-            showVoyagerConfirm('Yakin ingin menyimpan data dosen dan kelas ini?', () => formEl.submit());
-        });
-    }
 
     // Toggle kelas baru/pilih
     document.querySelectorAll('input[name="kelas_mode"]').forEach(function(radio) {
@@ -206,6 +177,27 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    var formTambahDosen = document.getElementById('formTambahDosen');
+    var btnSimpanDosen = document.getElementById('btnSimpanDosen');
+    var voyagerModal = $('#voyagerConfirmModal');
+    var voyagerModalYes = document.getElementById('voyagerConfirmModalYes');
+    var dosenFormToSubmit = null;
+    if(formTambahDosen && btnSimpanDosen) {
+        btnSimpanDosen.type = 'button';
+        btnSimpanDosen.addEventListener('click', function(e) {
+            e.preventDefault();
+            dosenFormToSubmit = formTambahDosen;
+            voyagerModal.modal('show');
+        });
+    }
+    voyagerModalYes.onclick = function() {
+        if(dosenFormToSubmit) {
+            dosenFormToSubmit.submit();
+            dosenFormToSubmit = null;
+            voyagerModal.modal('hide');
+        }
+    };
 });
 </script>
 @stop 

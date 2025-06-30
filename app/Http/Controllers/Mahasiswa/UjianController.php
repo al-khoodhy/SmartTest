@@ -13,7 +13,7 @@ class UjianController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'role:3']);
+        $this->middleware(['auth', 'voyager.permission:take_ujian']);
     }
     
     /**
@@ -135,16 +135,16 @@ class UjianController extends Controller
         $data = $request->input('jawaban_soal', []);
         $rules = [];
         foreach ($jawaban->tugas->soal as $soal) {
-            $rules['jawaban_soal.' . $soal->id] = 'required|string|min:20';
+            $rules['jawaban_soal.' . $soal->id] = 'required|string';
         }
         $rules['confirm_submit'] = 'required|accepted';
         $validator = Validator::make($request->all(), $rules, [
-            'jawaban_soal.*.min' => 'Jawaban minimal 20 karakter.',
             'confirm_submit.accepted' => 'Anda harus mengkonfirmasi submit jawaban.'
         ]);
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
+        
         foreach ($jawaban->tugas->soal as $soal) {
             $jawab = $data[$soal->id] ?? '';
             $jawabanSoal = $jawaban->jawabanSoal()->firstOrNew(['soal_id' => $soal->id]);
@@ -153,23 +153,40 @@ class UjianController extends Controller
             $jawabanSoal->waktu_selesai = Carbon::now();
             $jawabanSoal->save();
         }
+        
         // Gabungkan semua jawaban soal untuk field jawaban utama
         $allJawaban = [];
         foreach ($jawaban->tugas->soal as $soal) {
             $allJawaban[] = ($data[$soal->id] ?? '');
         }
         $jawaban->jawaban = implode("\n\n", $allJawaban);
+        
         // Hitung durasi detik
         $jawaban->waktu_selesai = Carbon::now();
         $jawaban->durasi_detik = $jawaban->waktu_mulai ? $jawaban->waktu_mulai->diffInSeconds($jawaban->waktu_selesai) : null;
         $jawaban->status = 'submitted';
         $jawaban->save();
+        
+        // Perform immediate auto-grading if enabled
         if ($jawaban->tugas->auto_grade) {
-            ProcessAutoGrading::dispatch($jawaban->id);
+            try {
+                $autoGradingService = app(\App\Services\AutoGradingService::class);
+                $autoGradingService->gradeJawaban($jawaban);
+                
+                // Refresh the jawaban to get the latest grading data
+                $jawaban->refresh();
+                
+                return redirect()->route('mahasiswa.tugas.show', $jawaban->tugas)
+                    ->with('success', 'Jawaban berhasil disubmit dan dinilai otomatis dengan AI. Nilai AI: ' . $jawaban->nilai_akhir);
+            } catch (\Exception $e) {
+                // If auto-grading fails, still submit but inform user
+                return redirect()->route('mahasiswa.tugas.show', $jawaban->tugas)
+                    ->with('warning', 'Jawaban berhasil disubmit, tetapi penilaian otomatis gagal. Menunggu penilaian dari dosen. Error: ' . $e->getMessage());
+            }
         }
+        
         return redirect()->route('mahasiswa.tugas.show', $jawaban->tugas)
-            ->with('success', 'Jawaban berhasil disubmit. ' .
-                ($jawaban->tugas->auto_grade ? 'Penilaian otomatis sedang diproses.' : 'Menunggu penilaian dari dosen.'));
+            ->with('success', 'Jawaban berhasil disubmit. Menunggu penilaian dari dosen.');
     }
     
     /**
@@ -183,9 +200,21 @@ class UjianController extends Controller
                 'status' => 'submitted'
             ]);
             
-            // Trigger auto grading jika diaktifkan
+            // Perform immediate auto grading jika diaktifkan
             if ($jawaban->tugas->auto_grade) {
-                ProcessAutoGrading::dispatch($jawaban->id);
+                try {
+                    $autoGradingService = app(\App\Services\AutoGradingService::class);
+                    $autoGradingService->gradeJawaban($jawaban);
+                    
+                    // Refresh the jawaban to get the latest grading data
+                    $jawaban->refresh();
+                    
+                    return redirect()->route('mahasiswa.tugas.show', $jawaban->tugas)
+                        ->with('warning', 'Waktu ujian habis. Jawaban Anda telah disubmit otomatis dan dinilai dengan AI. Nilai AI: ' . $jawaban->nilai_akhir);
+                } catch (\Exception $e) {
+                    return redirect()->route('mahasiswa.tugas.show', $jawaban->tugas)
+                        ->with('warning', 'Waktu ujian habis. Jawaban Anda telah disubmit otomatis, tetapi penilaian otomatis gagal. Menunggu penilaian dari dosen.');
+                }
             }
         }
         

@@ -26,7 +26,8 @@ class PenilaianController extends Controller
     {
         $dosen = auth()->user();
         
-        $tugasQuery = Tugas::where('dosen_id', $dosen->id)->with('kelas.mataKuliah');
+        $tugasQuery = Tugas::where('dosen_id', $dosen->id)
+            ->with(['kelas.mataKuliah', 'jawabanMahasiswa.penilaian']);
         if ($request->kelas_id) {
             $tugasQuery->where('kelas_id', $request->kelas_id);
         }
@@ -50,7 +51,7 @@ class PenilaianController extends Controller
         $this->authorize('view', $tugas);
         
         $jawaban = $tugas->jawabanMahasiswa()
-            ->with(['mahasiswa', 'penilaian'])
+            ->with(['mahasiswa', 'penilaian', 'jawabanSoal.soal', 'jawabanSoal.penilaian'])
             ->where('status', '!=', 'draft')
             ->latest()
             ->paginate(15);
@@ -87,47 +88,98 @@ class PenilaianController extends Controller
     {
         $this->authorize('view', $jawaban->tugas);
         $jawaban->load(['jawabanSoal.soal', 'jawabanSoal.penilaian']);
+        
         $rules = [];
         foreach ($jawaban->jawabanSoal as $jawabanSoal) {
-            $rules['nilai_manual.' . $jawabanSoal->id] = 'required|numeric|min:0|max:' . $jawaban->tugas->nilai_maksimal;
-            $rules['feedback_manual.' . $jawabanSoal->id] = 'required|string|min:5';
+            $rules['nilai_manual.' . $jawabanSoal->id] = 'nullable|numeric|max:' . $jawaban->tugas->nilai_maksimal;
+            $rules['feedback_manual.' . $jawabanSoal->id] = 'nullable|string';
         }
+        
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
+        
+        // Update penilaian per soal
+        $hasManualGrade = false;
         foreach ($jawaban->jawabanSoal as $jawabanSoal) {
             $nilai = $request->input('nilai_manual.' . $jawabanSoal->id);
             $feedback = $request->input('feedback_manual.' . $jawabanSoal->id);
+            
+            // Jika nilai kosong, set ke null
+            if ($nilai === null || $nilai === '') {
+                $nilai = null;
+            } else {
+                // Pastikan nilai tidak melebihi nilai maksimal
+                $nilai = min($nilai, $jawaban->tugas->nilai_maksimal);
+                $hasManualGrade = true; // Ada nilai manual yang diinput
+            }
+            
+            // Jika feedback kosong, set ke null
+            if ($feedback === null || $feedback === '') {
+                $feedback = null;
+            }
+            
             $penilaian = $jawabanSoal->penilaian;
             if (!$penilaian) {
                 $penilaian = \App\Models\PenilaianSoal::create([
                     'jawaban_soal_id' => $jawabanSoal->id,
                     'nilai_manual' => $nilai,
-                    'nilai_final' => $nilai,
+                    'nilai_final' => $nilai, // Nilai manual menjadi nilai final
                     'feedback_manual' => $feedback,
-                    'status_penilaian' => 'final',
+                    'status_penilaian' => $nilai !== null ? 'final' : 'pending',
                     'graded_by' => auth()->id(),
                     'graded_at' => now(),
                 ]);
             } else {
                 $penilaian->update([
                     'nilai_manual' => $nilai,
-                    'nilai_final' => $nilai,
+                    'nilai_final' => $nilai, // Nilai manual menjadi nilai final
                     'feedback_manual' => $feedback,
-                    'status_penilaian' => 'final',
+                    'status_penilaian' => $nilai !== null ? 'final' : 'pending',
                     'graded_by' => auth()->id(),
                     'graded_at' => now(),
                 ]);
             }
         }
-        // Update status jawaban jika semua soal sudah dinilai
-        $allGraded = $jawaban->jawabanSoal->every(function($js) { return optional($js->penilaian)->status_penilaian === 'final'; });
-        if ($allGraded) {
+        
+        // Hitung nilai akhir berdasarkan PenilaianSoal
+        $nilaiAkhir = $jawaban->nilai_akhir;
+        
+        // Update atau buat Penilaian utama sebagai backup/arsip
+        $penilaianUtama = $jawaban->penilaian;
+        if (!$penilaianUtama) {
+            $penilaianUtama = \App\Models\Penilaian::create([
+                'jawaban_id' => $jawaban->id,
+                'nilai_manual' => $nilaiAkhir,
+                'nilai_final' => $nilaiAkhir,
+                'feedback_manual' => 'Nilai dihitung otomatis dari penilaian per soal',
+                'status_penilaian' => 'final',
+                'graded_by' => auth()->id(),
+                'graded_at' => now(),
+            ]);
+        } else {
+            $penilaianUtama->update([
+                'nilai_manual' => $nilaiAkhir,
+                'nilai_final' => $nilaiAkhir,
+                'feedback_manual' => 'Nilai dihitung otomatis dari penilaian per soal',
+                'status_penilaian' => 'final',
+                'graded_by' => auth()->id(),
+                'graded_at' => now(),
+            ]);
+        }
+        
+        // Update status jawaban menjadi graded jika semua soal sudah dinilai (manual/AI)
+        $isAllGraded = $jawaban->jawabanSoal->every(function($js) {
+            $penilaian = $js->penilaian;
+            return $penilaian && in_array($penilaian->status_penilaian, ['final', 'ai_graded']);
+        });
+        if ($isAllGraded && $jawaban->status !== 'graded') {
             $jawaban->update(['status' => 'graded']);
         }
+        
         return redirect()->route('dosen.penilaian.tugas', $jawaban->tugas)
-            ->with('success', 'Penilaian berhasil disimpan.');
+            ->with('success', 'Penilaian berhasil disimpan. Nilai akhir: ' . $nilaiAkhir);
     }
     
     /**

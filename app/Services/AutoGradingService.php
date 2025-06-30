@@ -38,9 +38,11 @@ class AutoGradingService
             }
             
             $jawaban->load(['jawabanSoal', 'tugas.soal']);
+            
             foreach ($jawaban->jawabanSoal as $jawabanSoal) {
                 // Skip jika sudah dinilai
                 if ($jawabanSoal->penilaian && $jawabanSoal->penilaian->status_penilaian === 'final') continue;
+                
                 $soal = $jawabanSoal->soal;
                 $result = $this->geminiService->gradeEssay(
                     $soal->pertanyaan,
@@ -48,23 +50,45 @@ class AutoGradingService
                     $tugas->rubrik_penilaian,
                     $tugas->nilai_maksimal
                 );
+                
+                // Pastikan nilai tidak melebihi nilai maksimal
+                $nilai = min($result['nilai'], $tugas->nilai_maksimal);
+                
                 PenilaianSoal::updateOrCreate(
                     ['jawaban_soal_id' => $jawabanSoal->id],
                     [
-                        'nilai_ai' => $result['nilai'],
-                        'nilai_final' => $result['nilai'],
+                        'nilai_ai' => $nilai,
+                        'nilai_final' => $nilai, // Nilai AI menjadi nilai final
                         'feedback_ai' => $result['feedback'],
                         'status_penilaian' => 'ai_graded',
                         'graded_at' => now(),
                     ]
                 );
             }
+            
+            // Hitung nilai akhir berdasarkan PenilaianSoal
+            $nilaiAkhir = $jawaban->nilai_akhir;
+            
+            // Buat Penilaian utama sebagai backup/arsip
+            \App\Models\Penilaian::create([
+                'jawaban_id' => $jawaban->id,
+                'nilai_ai' => $nilaiAkhir,
+                'nilai_final' => $nilaiAkhir,
+                'feedback_ai' => 'Nilai dihitung otomatis dari penilaian per soal dengan AI',
+                'status_penilaian' => 'ai_graded',
+                'graded_at' => now(),
+            ]);
+            
             // Update status jawaban jika semua soal sudah dinilai
-            $allGraded = $jawaban->jawabanSoal->every(function($js) { return optional($js->penilaian)->status_penilaian === 'ai_graded' || optional($js->penilaian)->status_penilaian === 'final'; });
+            $allGraded = $jawaban->jawabanSoal->every(function($js) { 
+                return optional($js->penilaian)->status_penilaian === 'ai_graded' || optional($js->penilaian)->status_penilaian === 'final'; 
+            });
+            
             if ($allGraded) {
                 $jawaban->update(['status' => 'graded']);
             }
-            Log::info('Auto grading per soal completed for jawaban ID: ' . $jawaban->id);
+            
+            Log::info('Auto grading per soal completed for jawaban ID: ' . $jawaban->id . ' with final score: ' . $nilaiAkhir);
             return true;
         } catch (Exception $e) {
             Log::error('Auto grading per soal failed for jawaban ID ' . $jawaban->id . ': ' . $e->getMessage());
@@ -114,7 +138,7 @@ class AutoGradingService
     }
     
     /**
-     * Re-grade jawaban yang sudah dinilai AI
+     * Re-grade jawaban dengan AI
      */
     public function regradeJawaban(JawabanMahasiswa $jawaban)
     {
@@ -126,28 +150,53 @@ class AutoGradingService
                 throw new Exception('Jawaban belum pernah dinilai');
             }
             
-            // Grade ulang menggunakan Gemini
+            // Re-grade setiap soal
+            $jawaban->load(['jawabanSoal.soal', 'jawabanSoal.penilaian']);
+            
+            foreach ($jawaban->jawabanSoal as $jawabanSoal) {
+                $soal = $jawabanSoal->soal;
             $result = $this->geminiService->gradeEssay(
-                $tugas->soal_esai,
-                $jawaban->jawaban,
+                    $soal->pertanyaan,
+                    $jawabanSoal->jawaban,
                 $tugas->rubrik_penilaian,
                 $tugas->nilai_maksimal
             );
             
-            // Update penilaian
+                // Pastikan nilai tidak melebihi nilai maksimal
+                $nilai = min($result['nilai'], $tugas->nilai_maksimal);
+                
+                // Update PenilaianSoal
+                $penilaianSoal = $jawabanSoal->penilaian;
+                if ($penilaianSoal) {
+                    $penilaianSoal->update([
+                        'nilai_ai' => $nilai,
+                        'feedback_ai' => $result['feedback'],
+                        'graded_at' => now(),
+                    ]);
+                    
+                    // Update nilai final jika belum ada review manual
+                    if (!$penilaianSoal->nilai_manual) {
+                        $penilaianSoal->update(['nilai_final' => $nilai]);
+                    }
+                }
+            }
+            
+            // Hitung nilai akhir berdasarkan PenilaianSoal
+            $nilaiAkhir = $jawaban->nilai_akhir;
+            
+            // Update Penilaian utama
             $penilaian->update([
-                'nilai_ai' => $result['nilai'],
-                'feedback_ai' => $result['feedback'],
-                'detail_penilaian_ai' => $result['detail'],
+                'nilai_ai' => $nilaiAkhir,
+                'feedback_ai' => 'Nilai dihitung ulang otomatis dari penilaian per soal dengan AI',
                 'graded_at' => now(),
             ]);
             
             // Update nilai final jika belum ada review manual
             if (!$penilaian->nilai_manual) {
-                $penilaian->update(['nilai_final' => $result['nilai']]);
+                $penilaian->update(['nilai_final' => $nilaiAkhir]);
             }
             
-            Log::info('Re-grading completed for jawaban ID: ' . $jawaban->id);
+            Log::info('Re-grading completed for jawaban ID: ' . $jawaban->id . ' with final score: ' . $nilaiAkhir);
             
             return $penilaian;
             

@@ -13,7 +13,7 @@ class TugasController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'role:3']);
+        $this->middleware(['auth', 'voyager.permission:view_tugas']);
     }
     
     /**
@@ -27,7 +27,7 @@ class TugasController extends Controller
         $kelasIds = $mahasiswa->enrollments()->active()->pluck('kelas_id');
         
         $query = Tugas::whereIn('kelas_id', $kelasIds)
-            ->with('kelas.mataKuliah')
+            ->with(['kelas.mataKuliah', 'dosen'])
             ->active();
         
         // Filter berdasarkan mata kuliah
@@ -103,19 +103,20 @@ class TugasController extends Controller
             abort(403, 'Anda tidak terdaftar di mata kuliah ini.');
         }
         
-        $tugas->load(['kelas']);
+        $tugas->load(['kelas.mataKuliah', 'soal']);
         
         // Get jawaban mahasiswa jika ada
         $jawaban = $mahasiswa->jawabanMahasiswa()
             ->where('tugas_id', $tugas->id)
-            ->with('penilaian')
+            ->with(['penilaian', 'jawabanSoal.soal', 'jawabanSoal.penilaian'])
             ->first();
         
         // Check apakah tugas masih bisa dikerjakan
         $canWork = !$jawaban && $tugas->deadline > Carbon::now() && $tugas->is_active;
         $canContinue = $jawaban && $jawaban->status === 'draft' && $tugas->deadline > Carbon::now();
+        $isExpired = $tugas->deadline <= Carbon::now();
         
-        return view('mahasiswa.tugas.show', compact('tugas', 'jawaban', 'canWork', 'canContinue'));
+        return view('mahasiswa.tugas.show', compact('tugas', 'jawaban', 'canWork', 'canContinue', 'isExpired'));
     }
     
     /**
