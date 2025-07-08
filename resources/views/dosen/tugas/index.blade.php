@@ -92,30 +92,28 @@
                                                 <span class="badge bg-primary text-light" style="font-size:1em; min-width:2.5em;">{{ $t->jawabanMahasiswa->count() }}</span>
                                             </td>
                                             <td>
-                                                <div class="btn-group" role="group">
-                                                    <a href="{{ route('dosen.tugas.show', $t) }}" class="btn btn-sm btn-info" title="Lihat Detail">
+                                                <div class="d-flex justify-content-center align-items-center gap-1 flex-wrap" style="min-width:180px;">
+                                                    <a href="{{ route('dosen.tugas.show', $t) }}" class="btn btn-sm btn-info d-flex align-items-center justify-content-center" style="min-width:36px; min-height:36px;" title="Lihat Detail">
                                                         <i class="bi bi-eye"></i>
                                                     </a>
-                                                    <a href="{{ route('dosen.tugas.edit', $t) }}" class="btn btn-sm btn-warning" title="Edit">
+                                                    <a href="{{ route('dosen.tugas.edit', $t) }}" class="btn btn-sm btn-warning d-flex align-items-center justify-content-center" style="min-width:36px; min-height:36px;" title="Edit">
                                                         <i class="bi bi-pencil-square"></i>
                                                     </a>
-                                                    <form action="{{ route('dosen.tugas.toggle-status', $t) }}" method="POST" style="display: inline;">
+                                                    <form action="{{ route('dosen.tugas.toggle-status', $t) }}" method="POST" class="m-0 p-0 d-inline">
                                                         @csrf
                                                         @method('PATCH')
-                                                        <button type="submit" class="btn btn-sm {{ $t->is_active ? 'btn-secondary' : 'btn-success' }}" 
-                                                                onclick="return confirm('Yakin ingin mengubah status tugas?')" title="Ubah Status">
+                                                        <button type="button" class="btn btn-sm {{ $t->is_active ? 'btn-secondary' : 'btn-success' }} btn-toggle-status d-flex align-items-center justify-content-center" style="min-width:36px; min-height:36px;" title="Ubah Status">
                                                             <i class="bi bi-{{ $t->is_active ? 'pause-circle' : 'play-circle' }}"></i>
                                                         </button>
                                                     </form>
                                                     @if($t->jawabanMahasiswa->count() == 0)
-                                                        <form action="{{ route('dosen.tugas.destroy', $t) }}" method="POST" style="display: inline;">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="btn btn-sm btn-danger" 
-                                                                    onclick="return confirm('Yakin ingin menghapus tugas ini?')" title="Hapus">
-                                                                <i class="bi bi-trash"></i>
-                                                            </button>
-                                                        </form>
+                                                    <form action="{{ route('dosen.tugas.destroy', $t) }}" method="POST" class="m-0 p-0 d-inline">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="button" class="btn btn-sm btn-danger btn-delete-tugas d-flex align-items-center justify-content-center" style="min-width:36px; min-height:36px;" title="Hapus">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
                                                     @endif
                                                 </div>
                                             </td>
@@ -144,5 +142,87 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Konfirmasi Khusus Halaman Ini (warna dinamis sesuai aksi) -->
+<div class="modal fade" id="localConfirmModal" tabindex="-1" aria-labelledby="localConfirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" id="localConfirmModalHeader">
+        <h5 class="modal-title" id="localConfirmModalLabel">Konfirmasi</h5>
+      </div>
+      <div class="modal-body" id="localConfirmModalBody">
+        <!-- Pesan konfirmasi -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn" id="localConfirmModalYes">Ya</button>
+      </div>
+    </div>
+  </div>
+</div>
 @endsection
+
+<script>
+(function() {
+    let localConfirmAction = null;
+    function showLocalConfirmModal(message, action, type) {
+        var body = document.getElementById('localConfirmModalBody');
+        var header = document.getElementById('localConfirmModalHeader');
+        var yesBtn = document.getElementById('localConfirmModalYes');
+        if (body) body.textContent = message;
+        // Reset warna
+        header.className = 'modal-header';
+        header.classList.remove('bg-danger', 'bg-primary', 'bg-secondary', 'text-white');
+        yesBtn.className = 'btn';
+        yesBtn.classList.remove('btn-danger', 'btn-primary', 'btn-secondary');
+        if (type === 'hapus') {
+            header.classList.add('bg-danger', 'text-white');
+            yesBtn.classList.add('btn-danger');
+            yesBtn.textContent = 'Ya, Hapus';
+        } else if (type === 'status') {
+            header.classList.add('bg-primary', 'text-white');
+            yesBtn.classList.add('btn-primary');
+            yesBtn.textContent = 'Ya, Ubah Status';
+        } else {
+            header.classList.add('bg-secondary', 'text-white');
+            yesBtn.classList.add('btn-secondary');
+            yesBtn.textContent = 'Ya';
+        }
+        localConfirmAction = action;
+        var modalEl = document.getElementById('localConfirmModal');
+        if (modalEl) {
+            var modal = new bootstrap.Modal(modalEl);
+            modal.show();
+            window._currentLocalConfirmModal = modal;
+        }
+    }
+    var yesBtn = document.getElementById('localConfirmModalYes');
+    if (yesBtn) {
+        yesBtn.onclick = function() {
+            if (localConfirmAction) localConfirmAction();
+            if (window._currentLocalConfirmModal) window._currentLocalConfirmModal.hide();
+        };
+    }
+    document.addEventListener('click', function(e) {
+        // Ubah status
+        if (e.target.closest('.btn-toggle-status')) {
+            e.preventDefault();
+            const btn = e.target.closest('.btn-toggle-status');
+            const form = btn.closest('form');
+            showLocalConfirmModal('Yakin ingin mengubah status tugas?', function() {
+                form.submit();
+            }, 'status');
+        }
+        // Hapus tugas
+        if (e.target.closest('.btn-delete-tugas')) {
+            e.preventDefault();
+            const btn = e.target.closest('.btn-delete-tugas');
+            const form = btn.closest('form');
+            showLocalConfirmModal('Yakin ingin menghapus tugas ini?', function() {
+                form.submit();
+            }, 'hapus');
+        }
+    });
+})();
+</script>
 

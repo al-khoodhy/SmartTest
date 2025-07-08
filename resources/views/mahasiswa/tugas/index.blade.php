@@ -16,11 +16,6 @@
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center">
                         <h4>Kumpulan Tugas</h4>
-                        <div>
-                            <a href="{{ route('mahasiswa.tugas.index') }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-clockwise"></i> Reset Filter
-                            </a>
-                        </div>
                     </div>
                 </div>
                 <div class="card-body">

@@ -163,7 +163,7 @@
     <div class="modal-content">
       <div class="modal-header bg-danger text-white">
         <h5 class="modal-title" id="voyagerConfirmModalLabel"><i class="voyager-warning"></i> Konfirmasi</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        {{-- <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button> --}}
       </div>
       <div class="modal-body" id="voyagerConfirmModalBody">
         Apakah Anda yakin?
@@ -209,9 +209,10 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.remove-soal').forEach(btn => {
             btn.style.display = '';
             btn.onclick = function() {
-                showVoyagerConfirm('Yakin ingin menghapus soal ini?', function() {
+                if (window.confirm('Yakin ingin menghapus soal ini?')) {
                     btn.closest('.soal-item').remove();
-                });
+                    updateRemoveButtons();
+                }
             };
         });
         // Sembunyikan tombol hapus jika hanya satu soal

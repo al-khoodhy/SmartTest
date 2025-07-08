@@ -512,8 +512,6 @@ document.addEventListener('DOMContentLoaded', function() {
     var btnKonfirmasi = document.getElementById('btnKonfirmasiSubmitJawaban');
     if(btnKonfirmasi) {
         btnKonfirmasi.addEventListener('click', function() {
-            // Pastikan tidak ada confirm() atau event JS lain
-            document.getElementById('jawabanForm').onsubmit = null;
             document.getElementById('jawabanForm').submit();
         });
     }

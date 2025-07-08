@@ -9,6 +9,8 @@ use App\Models\MataKuliah;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use TCG\Voyager\Models\Role;
+use TCG\Voyager\Alerts\Alert;
+use TCG\Voyager\Facades\Voyager;
 
 class AdminDosenController extends Controller
 {
@@ -90,7 +92,8 @@ class AdminDosenController extends Controller
             }
         });
 
-        return redirect()->route('admin.dosen.create')->with('success', 'Dosen, mata kuliah, dan kelas berhasil didaftarkan.');
+        Voyager::alert('success', 'Dosen, mata kuliah, dan kelas berhasil didaftarkan.');
+        return redirect()->route('admin.dosen.create');
     }
 
     public function show($id)

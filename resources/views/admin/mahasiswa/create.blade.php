@@ -101,16 +101,16 @@
 <div class="modal fade" id="voyagerConfirmModal" tabindex="-1" role="dialog" aria-labelledby="voyagerConfirmModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header bg-danger text-white">
-        <h5 class="modal-title" id="voyagerConfirmModalLabel"><i class="voyager-warning"></i> Konfirmasi</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="voyagerConfirmModalLabel"><i class="voyager-person"></i> Konfirmasi Simpan Mahasiswa</h5>
+        {{-- <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button> --}}
       </div>
       <div class="modal-body" id="voyagerConfirmModalBody">
         Yakin ingin menyimpan data mahasiswa ini?
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
-        <button type="button" class="btn btn-danger" id="voyagerConfirmModalYes">Ya</button>
+        <button type="button" class="btn btn-primary" id="voyagerConfirmModalYes">Ya, Simpan</button>
       </div>
     </div>
   </div>

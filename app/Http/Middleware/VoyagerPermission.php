@@ -18,7 +18,7 @@ class VoyagerPermission
     {
         // Check if user is authenticated
         if (!auth()->check()) {
-            return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu.');
+            return redirect()->route('voyager.login')->with('error', 'Silakan login terlebih dahulu.');
         }
         
         $user = auth()->user();

@@ -20,12 +20,19 @@ use App\Http\Controllers\Auth\CustomVoyagerAuthController;
 */
 
 Route::get('/', function () {
+    if (auth()->check()) {
+        $user = auth()->user();
+        if ($user->role_id == 2) { // Dosen
+            return redirect()->route('dosen.dashboard');
+        } elseif ($user->role_id == 3) { // Mahasiswa
+            return redirect()->route('mahasiswa.dashboard');
+        } elseif ($user->role_id == 1) { // Admin
+            return redirect()->route('voyager.dashboard');
+        }
+    }
     return redirect()->route('voyager.login');
 });
 
-
-// Authentication routes
-Auth::routes();
 
 // Main dashboard route (redirects based on role)
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -106,8 +113,6 @@ Route::group(['prefix' => 'admin'], function () {
 
 // Redirect after login
 Route::get('/home', [DashboardController::class, 'index'])->name('home');
-
-Auth::routes();
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 

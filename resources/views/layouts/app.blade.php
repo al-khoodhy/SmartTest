@@ -391,119 +391,62 @@
 
                     <!-- Right Side Of Navbar -->
                     <ul class="navbar-nav ms-auto">
-
-                        
-                        <!-- Authentication Links -->
-                        @guest
-                            @if (Route::has('login'))
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{{ route('login') }}">{{ __('Login') }}</a>
-                                </li>
-                            @endif
-
-                            @if (Route::has('register'))
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{{ route('register') }}">{{ __('Register') }}</a>
-                                </li>
-                            @endif
-                        @else
-                            <li class="nav-item dropdown">
-                                <a id="navbarDropdown" class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
-                                    <div class="d-flex flex-column align-items-start d-none d-md-flex">
-                                        <span class="fw-semibold">{{ Auth::user()->name }}</span>
-                                        <small class="text-muted">
-                                            @if(Auth::user()->role && Auth::user()->role->name == 'admin')
-                                                Administrator
-                                            @elseif(Auth::user()->role && Auth::user()->role->name == 'dosen')
-                                                Dosen
-                                            @elseif(Auth::user()->role && Auth::user()->role->name == 'mahasiswa')
-                                                Mahasiswa
-                                            @else
-                                                @if(Auth::user()->role_id == 1)
-                                                    Administrator
-                                                @elseif(Auth::user()->role_id == 2)
-                                                    Dosen
-                                                @elseif(Auth::user()->role_id == 3)
-                                                    Mahasiswa
-                                                @else
-                                                    User
-                                                @endif
-                                            @endif
-                                        </small>
-                                    </div>
-                                    <span class="d-md-none fw-semibold">{{ Auth::user()->name }}</span>
-                                    <i class="bi bi-person-circle fs-4 text-primary"></i>
-                                </a>
-
-                                <div class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="navbarDropdown" style="min-width: 200px; z-index: 1050;">
-                                    <div class="dropdown-header">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <i class="bi bi-person-circle fs-4 text-primary"></i>
-                                            <div>
-                                                <div class="fw-semibold">{{ Auth::user()->name }}</div>
-                                                <small class="text-muted">{{ Auth::user()->email }}</small>
-                                            </div>
+                        @auth
+                        <li class="nav-item dropdown">
+                            <a id="navbarDropdown" class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
+                                <div class="d-flex flex-column align-items-start d-none d-md-flex">
+                                    <span class="fw-semibold">{{ Auth::user()->name }}</span>
+                                    <small class="text-muted">
+                                        @if(Auth::user()->role && Auth::user()->role->name == 'admin')
+                                            Administrator
+                                        @elseif(Auth::user()->role && Auth::user()->role->name == 'dosen')
+                                            Dosen
+                                        @elseif(Auth::user()->role && Auth::user()->role->name == 'mahasiswa')
+                                            Mahasiswa
+                                        @else
+                                            User
+                                        @endif
+                                    </small>
+                                </div>
+                                <span class="d-md-none fw-semibold">{{ Auth::user()->name }}</span>
+                                <i class="bi bi-person-circle fs-4 text-primary"></i>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="navbarDropdown" style="min-width: 220px; z-index: 1050;">
+                                <div class="dropdown-header">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="bi bi-person-circle fs-4 text-primary"></i>
+                                        <div>
+                                            <div class="fw-semibold">{{ Auth::user()->name }}</div>
+                                            <small class="text-muted">{{ Auth::user()->email }}</small>
                                         </div>
                                     </div>
-                                    <div class="dropdown-divider"></div>
-                                    
-                                    @if(Auth::user()->role_id == 2)
-                                        <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('dosen.dashboard') }}">
-                                            <i class="bi bi-speedometer2"></i>
-                                            <span>Dashboard</span>
-                                        </a>
-                                        <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('dosen.tugas.index') }}">
-                                            <i class="bi bi-journal-text"></i>
-                                            <span>Kelola Tugas</span>
-                                        </a>
-                                        <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('dosen.penilaian.index') }}">
-                                            <i class="bi bi-clipboard-check"></i>
-                                            <span>Penilaian</span>
-                                        </a>
-                                        <div class="dropdown-divider"></div>
-                                        <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('dosen.profile.index') }}">
-                                            <i class="bi bi-person-gear"></i>
-                                            <span>Profil</span>
-                                        </a>
-                                        <div class="dropdown-divider"></div>
-                                    @elseif(Auth::user()->role_id == 3)
-                                        <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('mahasiswa.dashboard') }}">
-                                            <i class="bi bi-speedometer2"></i>
-                                            <span>Dashboard</span>
-                                        </a>
-                                        <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('mahasiswa.tugas.index') }}">
-                                            <i class="bi bi-journal-text"></i>
-                                            <span>Tugas</span>
-                                        </a>
-                                        <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('mahasiswa.nilai.index') }}">
-                                            <i class="bi bi-bar-chart"></i>
-                                            <span>Nilai</span>
-                                        </a>
-                                        <div class="dropdown-divider"></div>
-                                    @endif
-                                    
-                                    <a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#" onclick="logout()">
-                                        <i class="bi bi-box-arrow-right"></i>
-                                        <span>{{ __('Logout') }}</span>
-                                    </a>
-
-                                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                                        @csrf
-                                    </form>
                                 </div>
-                            </li>
-                            
-                            <!-- Mobile-friendly logout button -->
-                            <li class="nav-item d-md-none">
-                                <a class="nav-link text-danger" href="#" onclick="logout()">
+                                <div class="dropdown-divider"></div>
+                                @if(Auth::user()->role_id == 2)
+                                    <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('dosen.profile.index') }}">
+                                        <i class="bi bi-person-gear"></i>
+                                        <span>Lihat Profil</span>
+                                    </a>
+                                    <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('dosen.profile.edit') }}">
+                                        <i class="bi bi-pencil-square"></i>
+                                        <span>Edit Profil</span>
+                                    </a>
+                                    <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('dosen.profile.change-password') }}">
+                                        <i class="bi bi-key"></i>
+                                        <span>Ganti Password</span>
+                                    </a>
+                                    <div class="dropdown-divider"></div>
+                                @endif
+                                <a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#" onclick="logout()">
                                     <i class="bi bi-box-arrow-right"></i>
-                                    <span>Logout</span>
+                                    <span>{{ __('Logout') }}</span>
                                 </a>
-                                <form id="logout-form-mobile" action="{{ route('logout') }}" method="POST" class="d-none">
+                                <form id="logout-form" action="{{ route('voyager.logout') }}" method="POST" class="d-none">
                                     @csrf
                                 </form>
-                            </li>
-                        @endguest
+                            </div>
+                        </li>
+                        @endauth
                     </ul>
                 </div>
             </div>
@@ -568,6 +511,24 @@
                 @yield('content')
             </main>
         </div>
+    </div>
+    <!-- Modal Konfirmasi Bootstrap Global -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title" id="confirmModalLabel">Konfirmasi</h5>
+            </button>
+          </div>
+          <div class="modal-body" id="confirmModalBody">
+            <!-- Pesan konfirmasi akan diisi via JS -->
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+            <button type="button" class="btn btn-danger" id="confirmModalYes">Ya</button>
+          </div>
+        </div>
+      </div>
     </div>
     <script>
         // Robust dropdown implementation
@@ -652,7 +613,7 @@
             if (form) {
                 form.submit();
             } else {
-                window.location.href = '{{ route("logout") }}';
+                window.location.href = '{{ route('voyager.logout') }}';
             }
         }
         
@@ -718,6 +679,21 @@
                 icon.className = 'bi bi-list';
             }
         });
+    </script>
+    <script>
+        let confirmAction = null;
+        function showConfirmModal(message, action) {
+            document.getElementById('confirmModalBody').textContent = message;
+            confirmAction = action;
+            // Bootstrap 5 native modal
+            var modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            modal.show();
+            window._currentConfirmModal = modal;
+        }
+        document.getElementById('confirmModalYes').onclick = function() {
+            if (confirmAction) confirmAction();
+            if (window._currentConfirmModal) window._currentConfirmModal.hide();
+        };
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

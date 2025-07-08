@@ -5,9 +5,12 @@
     <div class="row justify-content-center">
         <div class="col-md-12">
             <div class="card">
-                <div class="card-header">
-                    <h4>Dashboard Dosen</h4>
-                    <p class="mb-0">Selamat datang, {{ auth()->user()->name }}</p>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4>Dashboard Dosen</h4>
+                        <p class="mb-0">Selamat datang, {{ auth()->user()->name }}</p>
+                    </div>
+                    <!-- Dropdown profil dihapus -->
                 </div>
 
                 <div class="card-body">

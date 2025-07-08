@@ -111,7 +111,7 @@
     <div class="modal-content">
       <div class="modal-header bg-primary text-white">
         <h5 class="modal-title" id="voyagerConfirmModalLabel"><i class="voyager-person"></i> Konfirmasi Simpan Dosen & Kelas</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        {{-- <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button> --}}
       </div>
       <div class="modal-body" id="voyagerConfirmModalBody">
         Apakah Anda yakin ingin menyimpan data dosen beserta kelas dan mata kuliah yang diampu?<br>

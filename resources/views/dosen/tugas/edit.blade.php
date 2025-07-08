@@ -138,7 +138,7 @@
                         <hr>
 
                         <div class="form-group mb-0">
-                            <button type="submit" class="btn btn-primary" onclick="return confirm('Yakin ingin mengupdate tugas ini?')">
+                            <button type="button" class="btn btn-primary" id="btnUpdateTugas">
                                 <i class="fas fa-save"></i> Update Tugas
                             </button>
                             <a href="{{ route('dosen.tugas.index') }}" class="btn btn-secondary">
@@ -152,33 +152,84 @@
     </div>
 </div>
 
-<!-- Modal Konfirmasi Voyager Style -->
-<div class="modal fade" id="voyagerConfirmModal" tabindex="-1" role="dialog" aria-labelledby="voyagerConfirmModalLabel" aria-hidden="true">
+<!-- Modal Konfirmasi Khusus Halaman Ini (warna dinamis sesuai aksi) -->
+<div class="modal fade" id="localConfirmModal" tabindex="-1" aria-labelledby="localConfirmModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header bg-danger text-white">
-        <h5 class="modal-title" id="voyagerConfirmModalLabel"><i class="voyager-warning"></i> Konfirmasi</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <div class="modal-header" id="localConfirmModalHeader">
+        <h5 class="modal-title" id="localConfirmModalLabel">Konfirmasi</h5>
       </div>
-      <div class="modal-body" id="voyagerConfirmModalBody">
-        Apakah Anda yakin?
+      <div class="modal-body" id="localConfirmModalBody">
+        <!-- Pesan konfirmasi -->
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
-        <button type="button" class="btn btn-danger" id="voyagerConfirmModalYes">Ya</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn" id="localConfirmModalYes">Ya</button>
       </div>
     </div>
   </div>
 </div>
-
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Set minimum datetime to current time
-    const deadlineInput = document.getElementById('deadline');
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    deadlineInput.min = now.toISOString().slice(0, 16);
-
+(function() {
+    let localConfirmAction = null;
+    let localModalInstance = null;
+    function showLocalConfirmModal(message, action, type) {
+        var body = document.getElementById('localConfirmModalBody');
+        var header = document.getElementById('localConfirmModalHeader');
+        var yesBtn = document.getElementById('localConfirmModalYes');
+        if (body) body.textContent = message;
+        // Reset warna
+        header.className = 'modal-header';
+        header.classList.remove('bg-danger', 'bg-primary', 'bg-secondary', 'text-white');
+        yesBtn.className = 'btn';
+        yesBtn.classList.remove('btn-danger', 'btn-primary', 'btn-secondary');
+        if (type === 'update') {
+            header.classList.add('bg-primary', 'text-white');
+            yesBtn.classList.add('btn-primary');
+            yesBtn.textContent = 'Ya, Update';
+        } else if (type === 'hapus') {
+            header.classList.add('bg-danger', 'text-white');
+            yesBtn.classList.add('btn-danger');
+            yesBtn.textContent = 'Ya, Hapus';
+        } else {
+            header.classList.add('bg-secondary', 'text-white');
+            yesBtn.classList.add('btn-secondary');
+            yesBtn.textContent = 'Ya';
+        }
+        localConfirmAction = action;
+        var modalEl = document.getElementById('localConfirmModal');
+        if (modalEl) {
+            localModalInstance = new bootstrap.Modal(modalEl);
+            localModalInstance.show();
+            window._currentLocalConfirmModal = localModalInstance;
+        }
+    }
+    var yesBtn = document.getElementById('localConfirmModalYes');
+    if (yesBtn) {
+        yesBtn.onclick = function() {
+            if (localConfirmAction) localConfirmAction();
+            if (window._currentLocalConfirmModal) window._currentLocalConfirmModal.hide();
+        };
+    }
+    document.addEventListener('click', function(e) {
+        // Update tugas
+        if (e.target.closest('#btnUpdateTugas')) {
+            e.preventDefault();
+            var btn = e.target.closest('#btnUpdateTugas');
+            var form = btn.closest('form');
+            showLocalConfirmModal('Yakin ingin mengupdate tugas ini?', function() {
+                form.submit();
+            }, 'update');
+        }
+        // Hapus soal
+        if (e.target.closest('.remove-soal')) {
+            e.preventDefault();
+            var btn = e.target.closest('.remove-soal');
+            showLocalConfirmModal('Yakin ingin menghapus soal ini?', function() {
+                btn.closest('.soal-item').remove();
+            }, 'hapus');
+        }
+    });
     // Dynamic soal
     let soalIndex = {{ count($tugas->soal) }};
     document.getElementById('add-soal').onclick = function() {
@@ -198,50 +249,12 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         soalList.appendChild(newItem);
         soalIndex++;
-        updateRemoveButtons();
     };
-    function updateRemoveButtons() {
-        document.querySelectorAll('.remove-soal').forEach(btn => {
-            btn.style.display = '';
-            btn.onclick = function() {
-                showVoyagerConfirm('Yakin ingin menghapus soal ini?', function() {
-                    btn.closest('.soal-item').remove();
-                });
-            };
-        });
-        // Sembunyikan tombol hapus jika hanya satu soal
-        if(document.querySelectorAll('.soal-item').length === 1) {
-            document.querySelector('.remove-soal').style.display = 'none';
-        }
-    }
-    updateRemoveButtons();
-
-    // Voyager style confirmation modal
-    var voyagerModal = $('#voyagerConfirmModal');
-    var voyagerModalBody = document.getElementById('voyagerConfirmModalBody');
-    var voyagerModalYes = document.getElementById('voyagerConfirmModalYes');
-    var confirmCallback = null;
-    function showVoyagerConfirm(message, callback) {
-        voyagerModalBody.textContent = message;
-        confirmCallback = callback;
-        voyagerModal.modal('show');
-    }
-    voyagerModalYes.onclick = function() {
-        if(confirmCallback) {
-            confirmCallback();
-            confirmCallback = null;
-            voyagerModal.modal('hide');
-        }
-    };
-
-    // Attach to form submit
-    var formEl = document.querySelector('form[action*="tugas/update"]');
-    if(formEl) {
-        formEl.addEventListener('submit', function(e) {
-            e.preventDefault();
-            showVoyagerConfirm('Yakin ingin mengupdate tugas ini?', () => formEl.submit());
-        });
-    }
-});
+    // Set minimum datetime to current time
+    const deadlineInput = document.getElementById('deadline');
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    deadlineInput.min = now.toISOString().slice(0, 16);
+})();
 </script>
 @endsection 

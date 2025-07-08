@@ -24,7 +24,7 @@ class DashboardController extends Controller
             return redirect()->route('mahasiswa.dashboard');
         } else {
             auth()->logout();
-            return redirect()->route('login')->with('error', 'Role tidak valid.');
+            return redirect()->route('voyager.login')->with('error', 'Role tidak valid.');
         }
     }
 }
