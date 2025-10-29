@@ -194,3 +194,7 @@ vendor/bin/phpunit
 
 ## Lisensi
 MIT. Lihat file LICENSE.
+
+
+## To call PHP Artisan in Server
+/usr/local/lsws/lsphp82/bin/php artisan 

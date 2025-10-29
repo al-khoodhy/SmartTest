@@ -17,6 +17,14 @@ class TugasPolicy
     }
 
     /**
+     * Voyager BREAD alias for browse permission.
+     */
+    public function browse(User $user): bool
+    {
+        return $this->viewAny($user);
+    }
+
+    /**
      * Determine whether the user can view the model.
      */
     public function view(User $user, Tugas $tugas): bool
@@ -43,11 +51,27 @@ class TugasPolicy
     }
 
     /**
+     * Voyager BREAD alias for read permission.
+     */
+    public function read(User $user, Tugas $tugas): bool
+    {
+        return $this->view($user, $tugas);
+    }
+
+    /**
      * Determine whether the user can create models.
      */
     public function create(User $user): bool
     {
         return $user->isDosen();
+    }
+
+    /**
+     * Voyager BREAD alias for add permission.
+     */
+    public function add(User $user): bool
+    {
+        return $this->create($user);
     }
 
     /**
@@ -66,6 +90,14 @@ class TugasPolicy
         }
         
         return false;
+    }
+
+    /**
+     * Voyager BREAD alias for edit permission.
+     */
+    public function edit(User $user, Tugas $tugas): bool
+    {
+        return $this->update($user, $tugas);
     }
 
     /**

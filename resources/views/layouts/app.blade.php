@@ -394,30 +394,37 @@
                         @auth
                         <li class="nav-item dropdown">
                             <a id="navbarDropdown" class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
-                                <div class="d-flex flex-column align-items-start d-none d-md-flex">
-                                    <span class="fw-semibold">{{ Auth::user()->name }}</span>
-                                    <small class="text-muted">
-                                        @if(Auth::user()->role && Auth::user()->role->name == 'admin')
-                                            Administrator
-                                        @elseif(Auth::user()->role && Auth::user()->role->name == 'dosen')
-                                            Dosen
-                                        @elseif(Auth::user()->role && Auth::user()->role->name == 'mahasiswa')
-                                            Mahasiswa
-                                        @else
-                                            User
-                                        @endif
-                                    </small>
-                                </div>
-                                <span class="d-md-none fw-semibold">{{ Auth::user()->name }}</span>
-                                <i class="bi bi-person-circle fs-4 text-primary"></i>
+                                @php
+                                    $_navAvatar = Auth::user()->avatar ?? null;
+                                    if ($_navAvatar && \Illuminate\Support\Str::startsWith($_navAvatar, ['http://','https://'])) {
+                                        $_navAvatarUrl = $_navAvatar;
+                                    } elseif ($_navAvatar) {
+                                        $_navAvatarUrl = asset('storage/'.ltrim($_navAvatar,'/'));
+                                    } else {
+                                        $_navAvatarUrl = asset('storage/users/default.png');
+                                    }
+                                @endphp
+                                <img src="{{ $_navAvatarUrl }}" alt="Akun" class="rounded-circle" style="width:32px; height:32px; object-fit:cover; border:2px solid #e9ecef;" onerror="this.onerror=null;this.src='{{ asset('storage/users/default.png') }}';">
                             </a>
                             <div class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="navbarDropdown" style="min-width: 220px; z-index: 1050;">
                                 <div class="dropdown-header">
                                     <div class="d-flex align-items-center gap-2">
-                                        <i class="bi bi-person-circle fs-4 text-primary"></i>
+                                        @php
+                                            $__avatar = Auth::user()->avatar ?? null;
+                                            if ($__avatar && \Illuminate\Support\Str::startsWith($__avatar, ['http://','https://'])) {
+                                                $__avatarUrl = $__avatar;
+                                            } elseif ($__avatar) {
+                                                $__avatarUrl = asset('storage/'.ltrim($__avatar,'/'));
+                                            } else {
+                                                $__avatarUrl = asset('storage/users/default.png');
+                                            }
+                                            $__roleName = optional(Auth::user()->role)->name;
+                                            $__roleLabel = $__roleName === 'admin' ? 'Administrator' : ($__roleName === 'dosen' ? 'Dosen' : ($__roleName === 'mahasiswa' ? 'Mahasiswa' : 'User'));
+                                        @endphp
+                                        <img src="{{ $__avatarUrl }}" alt="Foto Akun" class="rounded-circle" style="width:48px; height:48px; object-fit:cover; border:2px solid #e9ecef;" onerror="this.onerror=null;this.src='{{ asset('storage/users/default.png') }}';">
                                         <div>
                                             <div class="fw-semibold">{{ Auth::user()->name }}</div>
-                                            <small class="text-muted">{{ Auth::user()->email }}</small>
+                                            <small class="text-muted">{{ $__roleLabel }}</small>
                                         </div>
                                     </div>
                                 </div>
@@ -432,6 +439,20 @@
                                         <span>Edit Profil</span>
                                     </a>
                                     <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('dosen.profile.change-password') }}">
+                                        <i class="bi bi-key"></i>
+                                        <span>Ganti Password</span>
+                                    </a>
+                                    <div class="dropdown-divider"></div>
+                                @elseif(Auth::user()->role_id == 3)
+                                    <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('mahasiswa.profile.index') }}">
+                                        <i class="bi bi-person-gear"></i>
+                                        <span>Lihat Profil</span>
+                                    </a>
+                                    <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('mahasiswa.profile.edit') }}">
+                                        <i class="bi bi-pencil-square"></i>
+                                        <span>Edit Profil</span>
+                                    </a>
+                                    <a class="dropdown-item d-flex align-items-center gap-2" href="{{ route('mahasiswa.profile.change-password') }}">
                                         <i class="bi bi-key"></i>
                                         <span>Ganti Password</span>
                                     </a>

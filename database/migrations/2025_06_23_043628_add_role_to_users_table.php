@@ -12,20 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            if (Schema::hasColumn('users', 'user_role')) {
-                $table->dropColumn('user_role');
+            if (!Schema::hasColumn('users', 'role_id')) {
+                $table->unsignedBigInteger('role_id')->nullable()->after('id');
             }
-            if (Schema::hasColumn('users', 'nim_nip')) {
-                $table->dropColumn('nim_nip');
-            }
-            if (Schema::hasColumn('users', 'phone')) {
-                $table->dropColumn('phone');
-            }
-            if (Schema::hasColumn('users', 'address')) {
-                $table->dropColumn('address');
-            }
-            if (Schema::hasColumn('users', 'is_active')) {
-                $table->dropColumn('is_active');
+            // Hapus foreign key lama jika ada
+            if (Schema::hasColumn('users', 'role_id')) {
+                try {
+                    $table->dropForeign(['role_id']);
+                } catch (\Exception $e) {}
+                $table->foreign('role_id')->references('id')->on('roles')->onDelete('set null');
             }
         });
     }

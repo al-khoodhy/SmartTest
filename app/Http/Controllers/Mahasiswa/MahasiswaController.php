@@ -63,6 +63,11 @@ class MahasiswaController extends Controller
         ));
     }
     
+    public function scalper()
+    {
+        return view('mahasiswa.scalper');
+    }
+
     private function getTugasAktif($mahasiswa)
     {
         $kelasIds = Enrollment::where('mahasiswa_id', $mahasiswa->id)

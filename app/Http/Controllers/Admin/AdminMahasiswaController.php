@@ -10,6 +10,7 @@ use App\Models\Enrollment;
 use Illuminate\Support\Facades\DB;
 use TCG\Voyager\Models\Role;
 use TCG\Voyager\Facades\Voyager;
+use RealRashid\SweetAlert\Facades\Alert;
 
 class AdminMahasiswaController extends Controller
 {
@@ -57,8 +58,9 @@ class AdminMahasiswaController extends Controller
             }
         });
 
-        Voyager::alert('success', 'Mahasiswa berhasil didaftarkan dan di-enroll ke kelas.');
-        return redirect()->route('admin.mahasiswa.create');
+        return redirect()
+        ->back()
+        ->with('success', 'Mahasiswa berhasil didaftarkan');
     }
 
     // Import mahasiswa via CSV

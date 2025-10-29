@@ -13,12 +13,12 @@
             </a>
         @endcan
         @can('add', app($dataType->model_name))
-        <a href="http://localhost/smarttest/public/admin/dosen/create" class="btn btn-success btn-add-new">
+        <a href="https://alkhoodhy.my.id/admin/dosen/create" class="btn btn-success btn-add-new">
             <i class="voyager-plus"></i> <span>Tambah Dosen</span>
         </a>
     @endcan
     @can('add', app($dataType->model_name))
-    <a href="http://localhost/smarttest/public/admin/mahasiswa/create" class="btn btn-success btn-add-new">
+    <a href="https://alkhoodhy.my.id/admin/mahasiswa/create" class="btn btn-success btn-add-new">
         <i class="voyager-plus"></i> <span>Tambah Mahasiswa</span>
     </a>
 @endcan

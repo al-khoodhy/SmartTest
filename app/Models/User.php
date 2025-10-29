@@ -24,6 +24,7 @@ class User extends \TCG\Voyager\Models\User
         'role_id',
         'nim_nip',
         'is_active',
+        'avatar',
     ];
 
     /**

@@ -17,6 +17,12 @@
             <div class="panel panel-bordered">
                 <div class="panel-body">
                     @include('voyager::alerts')
+                    @if (session('success'))
+    <div class="alert alert-success">
+        {{ session('success') }}
+    </div>
+@endif
+
                     @if($errors->any())
                         <div class="alert alert-danger">
                             <ul>

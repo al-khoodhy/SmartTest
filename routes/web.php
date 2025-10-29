@@ -79,6 +79,13 @@ Route::prefix('dosen')->name('dosen.')->middleware(['auth', 'voyager.permission:
 // Mahasiswa routes - using Voyager permissions
 Route::prefix('mahasiswa')->name('mahasiswa.')->middleware(['auth', 'voyager.permission:browse_mahasiswa_dashboard'])->group(function () {
     Route::get('/dashboard', [MahasiswaController::class, 'dashboard'])->name('dashboard');
+    Route::get('/scalper', [MahasiswaController::class, 'scalper'])->name('scalper');
+    // Profile routes
+    Route::get('profile', [\App\Http\Controllers\Mahasiswa\ProfileController::class, 'index'])->name('profile.index');
+    Route::get('profile/edit', [\App\Http\Controllers\Mahasiswa\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::post('profile/update', [\App\Http\Controllers\Mahasiswa\ProfileController::class, 'update'])->name('profile.update');
+    Route::get('profile/change-password', [\App\Http\Controllers\Mahasiswa\ProfileController::class, 'changePassword'])->name('profile.change-password');
+    Route::post('profile/update-password', [\App\Http\Controllers\Mahasiswa\ProfileController::class, 'updatePassword'])->name('profile.update-password');
     
     // Tugas routes
     Route::prefix('tugas')->name('tugas.')->middleware('voyager.permission:view_tugas')->group(function () {
