@@ -19,6 +19,7 @@ use App\Http\Controllers\Auth\CustomVoyagerAuthController;
 |
 */
 
+
 Route::get('/', function () {
     if (auth()->check()) {
         $user = auth()->user();
@@ -75,9 +76,10 @@ Route::prefix('dosen')->name('dosen.')->middleware(['auth', 'voyager.permission:
     Route::get('profile/change-password', [\App\Http\Controllers\Dosen\ProfileController::class, 'changePassword'])->name('profile.change-password');
     Route::post('profile/update-password', [\App\Http\Controllers\Dosen\ProfileController::class, 'updatePassword'])->name('profile.update-password');
 });
-
+Auth::routes();
 // Mahasiswa routes - using Voyager permissions
 Route::prefix('mahasiswa')->name('mahasiswa.')->middleware(['auth', 'voyager.permission:browse_mahasiswa_dashboard'])->group(function () {
+    
     Route::get('/dashboard', [MahasiswaController::class, 'dashboard'])->name('dashboard');
     Route::get('/scalper', [MahasiswaController::class, 'scalper'])->name('scalper');
     // Profile routes

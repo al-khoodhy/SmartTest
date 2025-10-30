@@ -458,13 +458,15 @@
                                     </a>
                                     <div class="dropdown-divider"></div>
                                 @endif
-                                <a class="dropdown-item d-flex align-items-center gap-2 text-danger" href="#" onclick="logout()">
-                                    <i class="bi bi-box-arrow-right"></i>
-                                    <span>{{ __('Logout') }}</span>
-                                </a>
-                                <form id="logout-form" action="{{ route('voyager.logout') }}" method="POST" class="d-none">
-                                    @csrf
-                                </form>
+                                <a class="dropdown-item d-flex align-items-center gap-2 text-danger" 
+   href="{{ route('voyager.logout') }}" 
+   onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+    <i class="bi bi-box-arrow-right"></i>
+    <span>{{ __('Logout') }}</span>
+</a>
+<form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+    @csrf
+</form>
                             </div>
                         </li>
                         @endauth
