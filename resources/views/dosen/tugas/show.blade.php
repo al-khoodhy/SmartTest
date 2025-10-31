@@ -51,6 +51,9 @@
                                     <li>
                                         <div><strong>Pertanyaan:</strong> {{ $soal->pertanyaan }}</div>
                                         <div><strong>Bobot:</strong> {{ $soal->bobot }}</div>
+                                        @if($tugas->auto_grade && $soal->kunci_jawaban)
+                                            <div><strong>Kunci Jawaban:</strong> <span class="text-primary">{{ $soal->kunci_jawaban }}</span></div>
+                                        @endif
                                     </li>
                                 @endforeach
                             </ol>

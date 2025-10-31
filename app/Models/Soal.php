@@ -15,6 +15,7 @@ class Soal extends Model
         'tugas_id',
         'pertanyaan',
         'bobot',
+        'kunci_jawaban',
     ];
 
     public function tugas()

@@ -116,6 +116,7 @@ class TugasController extends Controller
                         $tugas->soal()->create([
                             'pertanyaan' => $soal['pertanyaan'],
                             'bobot' => $soal['bobot'],
+                            'kunci_jawaban' => $soal['kunci_jawaban'] ?? null,
                         ]);
                     }
                 }
@@ -196,6 +197,7 @@ class TugasController extends Controller
                     $tugas->soal()->create([
                         'pertanyaan' => $soal['pertanyaan'],
                         'bobot' => $soal['bobot'],
+                        'kunci_jawaban' => $soal['kunci_jawaban'] ?? null,
                     ]);
                 }
             }

@@ -512,9 +512,19 @@ document.addEventListener('DOMContentLoaded', function() {
     var btnKonfirmasi = document.getElementById('btnKonfirmasiSubmitJawaban');
     if(btnKonfirmasi) {
         btnKonfirmasi.addEventListener('click', function() {
+            window.removeEventListener('beforeunload', beforeUnloadHandler);
             document.getElementById('jawabanForm').submit();
         });
     }
+
+    // Simpan handler agar bisa dilepas
+    function beforeUnloadHandler(e) {
+        if (hasUnsavedChanges) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    }
+    window.addEventListener('beforeunload', beforeUnloadHandler);
 });
 </script>
 

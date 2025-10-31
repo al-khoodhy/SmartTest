@@ -65,13 +65,20 @@
 
                         <div class="form-group">
                             <label>Soal & Bobot <span class="text-danger">*</span></label>
+                            <div class="form-check mb-2">
+                                <input type="checkbox" class="form-check-input" id="gunakanKunciJawaban" name="gunakan_kunci_jawaban" value="1" {{ old('gunakan_kunci_jawaban') ? 'checked' : '' }}>
+                                <label class="form-check-label" for="gunakanKunciJawaban">Gunakan Kunci Jawaban</label>
+                            </div>
                             <div id="soal-list">
                                 <div class="soal-item row mb-2">
-                                    <div class="col-md-9">
+                                    <div class="col-md-6">
                                         <input type="text" name="soal[0][pertanyaan]" class="form-control" placeholder="Tulis pertanyaan soal" required>
                                     </div>
                                     <div class="col-md-2">
                                         <input type="number" name="soal[0][bobot]" class="form-control" placeholder="Bobot" min="0.01" step="0.01" required>
+                                    </div>
+                                    <div class="col-md-3 kunci-jawaban-wrap" style="display:none;">
+                                        <input type="text" name="soal[0][kunci_jawaban]" class="form-control" placeholder="Kunci jawaban">
                                     </div>
                                     <div class="col-md-1 d-flex align-items-center">
                                         <button type="button" class="btn btn-danger btn-sm remove-soal" style="display:none">&times;</button>
@@ -85,7 +92,7 @@
                             <label for="rubrik_penilaian">Rubrik Penilaian</label>
                             <textarea class="form-control @error('rubrik_penilaian') is-invalid @enderror" 
                                       id="rubrik_penilaian" name="rubrik_penilaian" rows="4" 
-                                      placeholder="Contoh: 1) Pemahaman konsep (40%), 2) Analisis (30%), 3) Struktur penulisan (30%)">{{ old('rubrik_penilaian') }}</textarea>
+                                      placeholder="Contoh: K1_konten (0.35), K2_argumentasi (0.25), K3_struktur (0.20), K4_istilah (0.15), K5_bahasa (0.05)">{{ old('rubrik_penilaian') }}</textarea>
                             @error('rubrik_penilaian')
                                 <span class="invalid-feedback">{{ $message }}</span>
                             @enderror
@@ -191,11 +198,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const newItem = document.createElement('div');
         newItem.className = 'soal-item row mb-2';
         newItem.innerHTML = `
-            <div class="col-md-9">
+            <div class="col-md-6">
                 <input type="text" name="soal[${soalIndex}][pertanyaan]" class="form-control" placeholder="Tulis pertanyaan soal" required>
             </div>
             <div class="col-md-2">
                 <input type="number" name="soal[${soalIndex}][bobot]" class="form-control" placeholder="Bobot" min="0.01" step="0.01" required>
+            </div>
+            <div class="col-md-3 kunci-jawaban-wrap" style="display:none;">
+                <input type="text" name="soal[${soalIndex}][kunci_jawaban]" class="form-control" placeholder="Kunci jawaban">
             </div>
             <div class="col-md-1 d-flex align-items-center">
                 <button type="button" class="btn btn-danger btn-sm remove-soal">&times;</button>
@@ -204,6 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
         soalList.appendChild(newItem);
         soalIndex++;
         updateRemoveButtons();
+        updateKunciVisibility();
     };
     function updateRemoveButtons() {
         document.querySelectorAll('.remove-soal').forEach(btn => {
@@ -221,6 +232,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     updateRemoveButtons();
+
+    function updateKunciVisibility() {
+        let show = document.getElementById('gunakanKunciJawaban').checked;
+        document.querySelectorAll('.kunci-jawaban-wrap').forEach(el => {
+            el.style.display = show ? '' : 'none';
+        });
+    }
+    document.getElementById('gunakanKunciJawaban').addEventListener('change', updateKunciVisibility);
+    // Pastikan juga update saat load page
+    updateKunciVisibility();
 
     // Voyager style confirmation modal untuk submit tugas
     var voyagerModal = $('#voyagerConfirmModal');

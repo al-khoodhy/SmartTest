@@ -196,13 +196,15 @@
             window._currentLocalConfirmModal = modal;
         }
     }
-    var yesBtn = document.getElementById('localConfirmModalYes');
-    if (yesBtn) {
-        yesBtn.onclick = function() {
-            if (localConfirmAction) localConfirmAction();
-            if (window._currentLocalConfirmModal) window._currentLocalConfirmModal.hide();
-        };
-    }
+    document.addEventListener('DOMContentLoaded', function() {
+        var yesBtn = document.getElementById('localConfirmModalYes');
+        if (yesBtn) {
+            yesBtn.onclick = function() {
+                if (localConfirmAction) localConfirmAction();
+                if (window._currentLocalConfirmModal) window._currentLocalConfirmModal.hide();
+            };
+        }
+    });
     document.addEventListener('click', function(e) {
         // Ubah status
         if (e.target.closest('.btn-toggle-status')) {

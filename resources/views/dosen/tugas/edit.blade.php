@@ -58,14 +58,21 @@
 
                         <div class="form-group">
                             <label>Soal & Bobot <span class="text-danger">*</span></label>
+                            <div class="form-check mb-2">
+                                <input type="checkbox" class="form-check-input" id="gunakanKunciJawaban" name="gunakan_kunci_jawaban" value="1" {{ ($tugas->soal->where('kunci_jawaban', '!=', null)->count() > 0) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="gunakanKunciJawaban">Gunakan Kunci Jawaban</label>
+                            </div>
                             <div id="soal-list">
                                 @foreach($tugas->soal as $i => $soal)
                                 <div class="soal-item row mb-2">
-                                    <div class="col-md-9">
+                                    <div class="col-md-6">
                                         <input type="text" name="soal[{{ $i }}][pertanyaan]" class="form-control" value="{{ old('soal.'.$i.'.pertanyaan', $soal->pertanyaan) }}" placeholder="Tulis pertanyaan soal" required>
                                     </div>
                                     <div class="col-md-2">
                                         <input type="number" name="soal[{{ $i }}][bobot]" class="form-control" value="{{ old('soal.'.$i.'.bobot', $soal->bobot) }}" placeholder="Bobot" min="0.01" step="0.01" required>
+                                    </div>
+                                    <div class="col-md-3 kunci-jawaban-wrap" style="display: {{ $soal->kunci_jawaban || ($tugas->soal->where('kunci_jawaban', '!=', null)->count() > 0) ? '' : 'none' }}">
+                                        <input type="text" name="soal[{{ $i }}][kunci_jawaban]" class="form-control" value="{{ old('soal.'.$i.'.kunci_jawaban', $soal->kunci_jawaban) }}" placeholder="Kunci jawaban">
                                     </div>
                                     <div class="col-md-1 d-flex align-items-center">
                                         <button type="button" class="btn btn-danger btn-sm remove-soal">&times;</button>
@@ -80,7 +87,7 @@
                             <label for="rubrik_penilaian">Rubrik Penilaian</label>
                             <textarea class="form-control @error('rubrik_penilaian') is-invalid @enderror" 
                                       id="rubrik_penilaian" name="rubrik_penilaian" rows="4"
-                                      placeholder="Contoh: 1) Pemahaman konsep (40%), 2) Analisis (30%), 3) Struktur penulisan (30%)">{{ old('rubrik_penilaian', $tugas->rubrik_penilaian) }}</textarea>
+                                      placeholder="Contoh: K1_konten (0.35), K2_argumentasi (0.25), K3_struktur (0.20), K4_istilah (0.15), K5_bahasa (0.05)">{{ old('rubrik_penilaian', $tugas->rubrik_penilaian) }}</textarea>
                             @error('rubrik_penilaian')
                                 <span class="invalid-feedback">{{ $message }}</span>
                             @enderror
@@ -230,18 +237,31 @@
             }, 'hapus');
         }
     });
-    // Dynamic soal
+    // Tambahkan visibility toggle kunci jawaban
+    function updateKunciVisibility() {
+        let show = document.getElementById('gunakanKunciJawaban').checked;
+        document.querySelectorAll('.kunci-jawaban-wrap').forEach(el => {
+            el.style.display = show ? '' : 'none';
+        });
+    }
+    document.getElementById('gunakanKunciJawaban').addEventListener('change', updateKunciVisibility);
+    // Pastikan juga update saat load page
+    updateKunciVisibility();
+    // Tambah soal baru harus ada col kunci jawaban
     let soalIndex = {{ count($tugas->soal) }};
     document.getElementById('add-soal').onclick = function() {
         const soalList = document.getElementById('soal-list');
         const newItem = document.createElement('div');
         newItem.className = 'soal-item row mb-2';
         newItem.innerHTML = `
-            <div class="col-md-9">
+            <div class="col-md-6">
                 <input type="text" name="soal[${soalIndex}][pertanyaan]" class="form-control" placeholder="Tulis pertanyaan soal" required>
             </div>
             <div class="col-md-2">
                 <input type="number" name="soal[${soalIndex}][bobot]" class="form-control" placeholder="Bobot" min="0.01" step="0.01" required>
+            </div>
+            <div class="col-md-3 kunci-jawaban-wrap" style="display: ${document.getElementById('gunakanKunciJawaban').checked ? '' : 'none'}">
+                <input type="text" name="soal[${soalIndex}][kunci_jawaban]" class="form-control" placeholder="Kunci jawaban">
             </div>
             <div class="col-md-1 d-flex align-items-center">
                 <button type="button" class="btn btn-danger btn-sm remove-soal">&times;</button>
@@ -249,6 +269,7 @@
         `;
         soalList.appendChild(newItem);
         soalIndex++;
+        updateKunciVisibility();
     };
     // Set minimum datetime to current time
     const deadlineInput = document.getElementById('deadline');
