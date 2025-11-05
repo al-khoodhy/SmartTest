@@ -7,9 +7,14 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4>Detail Penilaian Tugas</h4>
-                    <a href="{{ route('dosen.tugas.show', $tugas) }}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Kembali ke Detail Tugas
-                    </a>
+                    <div>
+                        <a href="{{ route('dosen.penilaian.export', $tugas) }}" class="btn btn-success me-2">
+                            <i class="fas fa-file-excel"></i> Export Nilai Excel
+                        </a>
+                        <a href="{{ route('dosen.tugas.show', $tugas) }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Kembali ke Detail Tugas
+                        </a>
+                    </div>
                 </div>
                 <div class="card-body">
                     <dl class="row">

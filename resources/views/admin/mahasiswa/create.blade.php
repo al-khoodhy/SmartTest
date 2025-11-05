@@ -41,7 +41,7 @@
                             <div class="form-group h-2">
                                 <label for="csv_file">Pilih File CSV</label>
                                 <input type="file" name="csv_file" id="csv_file" class="form-control" accept=".csv" required>
-                                <small class="form-text text-muted">Format: nama,email,nim,password (tanpa header)</small>
+                                <small class="form-text text-muted">Format: nama,email,nim,password (dengan header)</small>
                             </div>
                             <div class="form-group">
                                 <label>Pilih Kelas untuk Semua Mahasiswa</label>

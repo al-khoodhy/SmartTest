@@ -240,38 +240,172 @@ class PenilaianController extends Controller
     {
         $this->authorize('view', $tugas);
         
+        // Load relasi yang diperlukan
+        $tugas->load(['kelas.mataKuliah']);
+        
         $jawaban = $tugas->jawabanMahasiswa()
-            ->with(['mahasiswa', 'penilaian'])
+            ->with(['mahasiswa', 'penilaian', 'jawabanSoal.soal', 'jawabanSoal.penilaian'])
             ->where('status', 'graded')
             ->get();
         
-        $filename = 'nilai_' . str_replace(' ', '_', $tugas->judul) . '_' . date('Y-m-d') . '.csv';
+        $filename = 'nilai_' . str_replace(' ', '_', $tugas->judul) . '_' . date('Y-m-d') . '.xlsx';
+        
+        // Generate Excel file
+        $excelData = $this->generateExcel($tugas, $jawaban);
         
         $headers = [
-            'Content-Type' => 'text/csv',
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control' => 'max-age=0',
         ];
         
-        $callback = function() use ($jawaban) {
-            $file = fopen('php://output', 'w');
-            
-            // Header CSV
-            fputcsv($file, ['Nama Mahasiswa', 'Nilai AI', 'Nilai Manual', 'Nilai Final', 'Status', 'Tanggal Submit']);
-            
-            foreach ($jawaban as $j) {
-                fputcsv($file, [
-                    $j->mahasiswa->name,
-                    $j->penilaian->nilai_ai ?? '-',
-                    $j->penilaian->nilai_manual ?? '-',
-                    $j->penilaian->nilai_final ?? '-',
-                    $j->penilaian->status_penilaian,
-                    $j->waktu_selesai ? $j->waktu_selesai->format('Y-m-d H:i:s') : '-'
-                ]);
-            }
-            
-            fclose($file);
-        };
+        return response($excelData, 200, $headers);
+    }
+    
+    /**
+     * Generate Excel file content
+     */
+    private function generateExcel(Tugas $tugas, $jawaban)
+    {
+        // Create temporary file
+        $tempFile = tempnam(sys_get_temp_dir(), 'excel_');
+        $zip = new \ZipArchive();
+        $zip->open($tempFile, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
         
-        return response()->stream($callback, 200, $headers);
+        // Create directory structure
+        $zip->addFromString('[Content_Types].xml', $this->getContentTypesXml());
+        $zip->addFromString('_rels/.rels', $this->getRelsXml());
+        $zip->addFromString('xl/_rels/workbook.xml.rels', $this->getWorkbookRelsXml());
+        $zip->addFromString('xl/workbook.xml', $this->getWorkbookXml());
+        $zip->addFromString('xl/styles.xml', $this->getStylesXml());
+        $zip->addFromString('xl/worksheets/sheet1.xml', $this->getSheetXml($tugas, $jawaban));
+        
+        $zip->close();
+        
+        $content = file_get_contents($tempFile);
+        unlink($tempFile);
+        
+        return $content;
+    }
+    
+    private function getContentTypesXml()
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+    <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+    <Default Extension="xml" ContentType="application/xml"/>
+    <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+    <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+    <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+</Types>';
+    }
+    
+    private function getRelsXml()
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+    <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>';
+    }
+    
+    private function getWorkbookRelsXml()
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+    <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+    <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>';
+    }
+    
+    private function getWorkbookXml()
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+    <sheets>
+        <sheet name="Nilai Tugas" sheetId="1" r:id="rId1"/>
+    </sheets>
+</workbook>';
+    }
+    
+    private function getStylesXml()
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+    <fonts count="2">
+        <font><sz val="11"/><color rgb="000000"/><name val="Calibri"/></font>
+        <font><b/><sz val="11"/><color rgb="000000"/><name val="Calibri"/></font>
+    </fonts>
+    <fills count="2">
+        <fill><patternFill patternType="none"/></fill>
+        <fill><patternFill patternType="gray125"/></fill>
+    </fills>
+    <borders count="1">
+        <border><left/><right/><top/><bottom/><diagonal/></border>
+    </borders>
+    <cellStyleXfs count="1">
+        <xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>
+    </cellStyleXfs>
+    <cellXfs count="2">
+        <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+        <xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+    </cellXfs>
+</styleSheet>';
+    }
+    
+    private function getSheetXml(Tugas $tugas, $jawaban)
+    {
+        $rows = [];
+        
+        // Header informasi tugas
+        $rows[] = '<row><c t="inlineStr"><is><t>Mata Kuliah</t></is></c><c t="inlineStr"><is><t>' . htmlspecialchars($tugas->mataKuliah->nama_mk ?? '-') . '</t></is></c></row>';
+        $rows[] = '<row><c t="inlineStr"><is><t>Kelas</t></is></c><c t="inlineStr"><is><t>' . htmlspecialchars($tugas->kelas->nama_kelas ?? '-') . '</t></is></c></row>';
+        $rows[] = '<row><c t="inlineStr"><is><t>Judul Tugas</t></is></c><c t="inlineStr"><is><t>' . htmlspecialchars($tugas->judul) . '</t></is></c></row>';
+        $rows[] = '<row></row>'; // Empty row
+        
+        // Header tabel
+        $headerRow = '<row>';
+        $headerRow .= '<c t="inlineStr" s="1"><is><t>No</t></is></c>';
+        $headerRow .= '<c t="inlineStr" s="1"><is><t>Nama Mahasiswa</t></is></c>';
+        $headerRow .= '<c t="inlineStr" s="1"><is><t>Nilai AI</t></is></c>';
+        $headerRow .= '<c t="inlineStr" s="1"><is><t>Nilai Manual</t></is></c>';
+        $headerRow .= '<c t="inlineStr" s="1"><is><t>Nilai Final</t></is></c>';
+        $headerRow .= '<c t="inlineStr" s="1"><is><t>Status</t></is></c>';
+        $headerRow .= '<c t="inlineStr" s="1"><is><t>Tanggal Submit</t></is></c>';
+        $headerRow .= '</row>';
+        $rows[] = $headerRow;
+        
+        // Data rows
+        $no = 1;
+        foreach ($jawaban as $j) {
+            $row = '<row>';
+            $row .= '<c><v>' . $no . '</v></c>';
+            $row .= '<c t="inlineStr"><is><t>' . htmlspecialchars($j->mahasiswa->name ?? '-') . '</t></is></c>';
+            // Nilai AI total (menggunakan accessor)
+            $nilaiAi = $j->nilai_ai > 0 ? $j->nilai_ai : '';
+            $row .= '<c><v>' . ($nilaiAi !== '' ? $nilaiAi : '') . '</v></c>';
+            // Nilai Manual
+            $nilaiManual = $j->nilai_manual > 0 ? $j->nilai_manual : '';
+            $row .= '<c><v>' . ($nilaiManual !== '' ? $nilaiManual : '') . '</v></c>';
+            // Nilai Final
+            $nilaiFinal = $j->nilai_akhir > 0 ? $j->nilai_akhir : '';
+            $row .= '<c><v>' . ($nilaiFinal !== '' ? $nilaiFinal : '') . '</v></c>';
+            // Status
+            $row .= '<c t="inlineStr"><is><t>' . htmlspecialchars($j->status ?? '-') . '</t></is></c>';
+            // Tanggal Submit
+            $tanggal = $j->waktu_selesai ? $j->waktu_selesai->format('Y-m-d H:i:s') : '-';
+            $row .= '<c t="inlineStr"><is><t>' . htmlspecialchars($tanggal) . '</t></is></c>';
+            $row .= '</row>';
+            $rows[] = $row;
+            $no++;
+        }
+        
+        $xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+    <sheetData>
+        ' . implode("\n        ", $rows) . '
+    </sheetData>
+</worksheet>';
+        
+        return $xml;
     }
 }
