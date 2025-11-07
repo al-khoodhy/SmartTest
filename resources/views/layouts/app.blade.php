@@ -490,12 +490,12 @@
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link {{ request()->routeIs('dosen.tugas.*') ? 'active' : '' }}" href="{{ route('dosen.tugas.index') }}">
-                                        <i class="bi bi-journal-text"></i> Tugas
+                                        <i class="bi bi-journal-text"></i> Daftar Tugas
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link {{ request()->routeIs('dosen.penilaian.*') ? 'active' : '' }}" href="{{ route('dosen.penilaian.index') }}">
-                                        <i class="bi bi-clipboard-check"></i> Penilaian
+                                        <i class="bi bi-clipboard-check"></i> Hasil & Nilai
                                     </a>
                                 </li>
                             @elseif(Auth::user()->role_id == 3)
@@ -506,17 +506,17 @@
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link {{ request()->routeIs('mahasiswa.tugas.*') ? 'active' : '' }}" href="{{ route('mahasiswa.tugas.index') }}">
-                                        <i class="bi bi-journal-text"></i> Tugas
+                                        <i class="bi bi-journal-text"></i> Daftar Tugas
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link {{ request()->routeIs('mahasiswa.nilai.*') ? 'active' : '' }}" href="{{ route('mahasiswa.nilai.index') }}">
-                                        <i class="bi bi-bar-chart"></i> Nilai
+                                        <i class="bi bi-bar-chart"></i> Hasil & Nilai
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link {{ request()->routeIs('mahasiswa.ujian.*') ? 'active' : '' }}" href="{{ route('mahasiswa.ujian.index') }}">
-                                        <i class="bi bi-pencil-square"></i> Ujian
+                                        <i class="bi bi-pencil-square"></i> Tugas Sedang Dikerjakan
                                     </a>
                                 </li>
                             @endif

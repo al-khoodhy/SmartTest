@@ -90,9 +90,15 @@
 
                         <div class="form-group">
                             <label for="rubrik_penilaian">Rubrik Penilaian</label>
-                            <textarea class="form-control @error('rubrik_penilaian') is-invalid @enderror" 
-                                      id="rubrik_penilaian" name="rubrik_penilaian" rows="4" 
-                                      placeholder="Contoh: K1_konten (0.35), K2_argumentasi (0.25), K3_struktur (0.20), K4_istilah (0.15), K5_bahasa (0.05)">{{ old('rubrik_penilaian') }}</textarea>
+                            <textarea 
+                                class="form-control @error('rubrik_penilaian') is-invalid @enderror"
+                                id="rubrik_penilaian" 
+                                name="rubrik_penilaian" 
+                                rows="4"
+                                placeholder="Contoh: K1_konten (0.35), K2_argumentasi (0.25), K3_struktur (0.20), K4_istilah (0.15), K5_bahasa (0.05)"
+                                >{{ trim(old('rubrik_penilaian', 'K1-Konten (0.35), K2-Argumentasi (0.25), K3-Struktur (0.20), K4-Istilah (0.15), K5-Bahasa (0.05)')) }}
+                            </textarea>
+
                             @error('rubrik_penilaian')
                                 <span class="invalid-feedback">{{ $message }}</span>
                             @enderror

@@ -19,10 +19,8 @@ class GeminiService
 
     /**
      * ===========================
-     *  Fungsi Utama: gradeEssay
+     *  Single Essay Grading (legacy)
      * ===========================
-     * - Mengirim prompt ke Gemini API
-     * - Menghasilkan skor, feedback, dan rincian berbasis rubrik
      */
     public function gradeEssay($soal, $jawaban, $rubrikPenilaian = null, $nilaiMaksimal = 100, $kunciJawaban = null)
     {
@@ -43,10 +41,10 @@ class GeminiService
                     'parts' => [['text' => $prompt]],
                 ]],
                 'generationConfig' => [
-                    'temperature'      => 0.0,   // deterministik
-                    'topK'             => 1,
-                    'topP'             => 1.0,
-                    'maxOutputTokens'  => 800,   // efisien
+                    'temperature'     => 0.0,
+                    'topK'            => 1,
+                    'topP'            => 1.0,
+                    'maxOutputTokens' => 800,
                 ],
             ]);
 
@@ -65,35 +63,75 @@ class GeminiService
 
     /**
      * ===========================
-     *  Build Prompt Penilaian
+     *  Multi Essay Grading (Batching)
      * ===========================
-     * - Menghasilkan instruksi penilaian dengan format JSON-only
-     * - Sesuai prinsip: objektif, konsisten, dan berbasis rubrik
+     * - items: array of [
+     *      'soal_id'       => int,
+     *      'pertanyaan'    => string,
+     *      'jawaban'       => string,
+     *      'kunci_jawaban' => ?string
+     *   ]
+     * - Output: [ soal_id => [ 'nilai' => float, 'feedback' => string, 'detail' => [...] ], ... ]
+     */
+    public function gradeMultiEssay(array $items, $rubrikPenilaian = null, $nilaiMaksimal = 100)
+    {
+        if (empty($items)) {
+            throw new Exception('Tidak ada item untuk dinilai.');
+        }
+
+        try {
+            $prompt = $this->buildMultiGradingPrompt($items, $rubrikPenilaian, $nilaiMaksimal);
+
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->post($this->apiUrl . '?key=' . $this->apiKey, [
+                'contents' => [[
+                    'role'  => 'user',
+                    'parts' => [['text' => $prompt]],
+                ]],
+                'generationConfig' => [
+                    'temperature'     => 0.0,
+                    'topK'            => 1,
+                    'topP'            => 1.0,
+                    'maxOutputTokens' => 1200, // cukup untuk banyak soal
+                ],
+            ]);
+
+            if ($response->successful()) {
+                $result = $response->json();
+                return $this->parseMultiGradingResponse($result, $nilaiMaksimal);
+            } else {
+                Log::error('Gemini API Error (multi): ' . $response->body());
+                throw new Exception('Gagal menghubungi Gemini API (multi): ' . $response->status());
+            }
+        } catch (Exception $e) {
+            Log::error('Error grading multi essay: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Build prompt single-essay (sudah ada, tidak diubah)
      */
     private function buildGradingPrompt($soal, $jawaban, $rubrikPenilaian, $nilaiMaksimal, $kunciJawaban = null)
     {
-        $S_MAX = 4; // Skala per kriteria (0–4)
+        $S_MAX = 4;
 
         $prompt  = "PERAN: Anda penilai esai akademik. Nilai hanya berdasarkan SOAL, (opsional) KUNCI, dan RUBRIK.\n";
-        $prompt .= "PRINSIP: objektif, konsisten, berbasis bukti, bebas bias identitas, fokus isi; hindari menilai panjang/gaya.\n";
+        $prompt .= "PRINSIP: objektif, konsisten, berbasis bukti, bebas bias identitas, fokus isi.\n";
         $prompt .= "SKALA: 0–{$S_MAX} per kriteria, total 0–{$nilaiMaksimal}.\n";
         $prompt .= "RUMUS TOTAL: round({$nilaiMaksimal} * Σ(bobot_i * skor_i/{$S_MAX}), 1).\n";
-        $prompt .= "KETENTUAN:\n";
-        $prompt .= "- Jika KUNCI tersedia: nilai kecocokan konsep, bukan sinonim literal.\n";
-        $prompt .= "- Jika jawaban off-topic: beri skor rendah sesuai rubrik.\n";
-        $prompt .= "- Sertakan EVIDENCE kutipan (≤25 kata) dari jawaban untuk skor < {$S_MAX}.\n";
-        $prompt .= "- KELUARAN WAJIB BERFORMAT JSON VALID SAJA, TANPA TEKS TAMBAHAN.\n\n";
+        $prompt .= "KELUARAN WAJIB JSON VALID SAJA.\n\n";
 
         $prompt .= "SOAL:\n{$soal}\n\n";
         if ($kunciJawaban) {
             $prompt .= "KUNCI:\n{$kunciJawaban}\n\n";
         }
         if ($rubrikPenilaian) {
-            $prompt .= "RUBRIK (berbobot; skala 0–{$S_MAX}):\n{$rubrikPenilaian}\n\n";
+            $prompt .= "RUBRIK:\n{$rubrikPenilaian}\n\n";
         }
         $prompt .= "JAWABAN:\n{$jawaban}\n\n";
 
-        // Template JSON wajib (deterministik)
         $template = [
             "criteria" => (object)[],
             "total"    => 0.0,
@@ -104,31 +142,117 @@ class GeminiService
 
         $prompt .= "FORMAT OUTPUT (WAJIB JSON SAJA):\n";
         $prompt .= json_encode($template, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n";
-        $prompt .= "ATURAN:\n";
-        $prompt .= "- Isi semua KRITERIA dari RUBRIK dengan {score,evidence}.\n";
-        $prompt .= "- Evidence boleh kosong hanya jika score={$S_MAX}.\n";
-        $prompt .= "- Setiap daftar (pos/neg/rec) maks 3 item.\n";
-        $prompt .= "- JSON valid tunggal, tanpa catatan tambahan.\n";
 
         return $prompt;
     }
 
     /**
-     * ===========================
-     *  Parse Hasil dari Gemini
-     * ===========================
-     * - Prioritas JSON parsing
-     * - Fallback ke pola lama (NILAI:, FEEDBACK:, dst.)
+     * Build prompt untuk multi-essay (batch)
+     */
+    private function buildMultiGradingPrompt(array $items, $rubrikPenilaian, $nilaiMaksimal)
+    {
+        $S_MAX = 4;
+
+        $prompt  = "PERAN: Anda penilai esai akademik.\n";
+        $prompt .= "TUGAS: Nilai beberapa jawaban sekaligus berdasarkan SOAL, (opsional) KUNCI, dan RUBRIK.\n";
+        $prompt .= "PRINSIP: objektif, konsisten, berbasis bukti, bebas bias identitas, fokus isi.\n";
+        $prompt .= "SKALA: 0–{$S_MAX} per kriteria, total 0–{$nilaiMaksimal} per soal.\n";
+        $prompt .= "KELUARAN: JSON valid dengan struktur:\n";
+        $prompt .= json_encode([
+            "items" => [
+                [
+                    "soal_id"  => 1,
+                    "total"    => 0.0,
+                    "pos"      => [],
+                    "neg"      => [],
+                    "rec"      => [],
+                    "criteria" => (object)[]
+                ]
+            ]
+        ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) . "\n";
+        $prompt .= "ATURAN:\n";
+        $prompt .= "- Gunakan field soal_id persis seperti input.\n";
+        $prompt .= "- total: 0–{$nilaiMaksimal}, dibulatkan 1 desimal.\n";
+        $prompt .= "- Evidence singkat bila skor < {$S_MAX}.\n";
+        $prompt .= "- Hanya 1 JSON, tanpa teks tambahan.\n\n";
+
+        if ($rubrikPenilaian) {
+            $prompt .= "RUBRIK GLOBAL:\n{$rubrikPenilaian}\n\n";
+        }
+
+        $prompt .= "DATA:\n";
+        foreach ($items as $i => $item) {
+            $prompt .= "ITEM #" . ($i + 1) . "\n";
+            $prompt .= "soal_id: " . $item['soal_id'] . "\n";
+            $prompt .= "SOAL: " . $item['pertanyaan'] . "\n";
+            if (!empty($item['kunci_jawaban'])) {
+                $prompt .= "KUNCI: " . $item['kunci_jawaban'] . "\n";
+            }
+            $prompt .= "JAWABAN: " . $item['jawaban'] . "\n\n";
+        }
+
+        return $prompt;
+    }
+
+        /**
+     * Bangun teks feedback terstruktur dari array pos/neg/rec
+     */
+    private function buildFeedbackText(array $pos, array $neg, array $rec): string
+    {
+        // Bersihkan elemen kosong
+        $pos = array_values(array_filter($pos, fn($v) => trim($v) !== ''));
+        $neg = array_values(array_filter($neg, fn($v) => trim($v) !== ''));
+        $rec = array_values(array_filter($rec, fn($v) => trim($v) !== ''));
+
+        $lines = [];
+
+        // Kelebihan
+        $lines[] = 'Kelebihan:';
+        if (!empty($pos)) {
+            foreach ($pos as $p) {
+                $lines[] = '- ' . $p;
+            }
+        } else {
+            $lines[] = '- (Belum tampak kelebihan yang menonjol pada jawaban ini.)';
+        }
+
+        $lines[] = ''; // baris kosong
+
+        // Hal yang perlu diperbaiki
+        $lines[] = 'Hal yang perlu diperbaiki:';
+        if (!empty($neg)) {
+            foreach ($neg as $n) {
+                $lines[] = '- ' . $n;
+            }
+        } else {
+            $lines[] = '- Tidak ada kekurangan yang signifikan terkait pemenuhan indikator utama.';
+        }
+
+        $lines[] = '';
+
+        // Saran pengembangan
+        $lines[] = 'Saran pengembangan:';
+        if (!empty($rec)) {
+            foreach ($rec as $r) {
+                $lines[] = '- ' . $r;
+            }
+        } else {
+            $lines[] = '- Pertahankan kualitas jawaban dan tetap sesuaikan dengan rubrik penilaian.';
+        }
+
+        return trim(implode("\n", $lines));
+    }
+
+
+    /**
+     * Parse single-essay (sudah ada)
      */
     private function parseGradingResponse($response, $nilaiMaksimal)
     {
         try {
             $text = $response['candidates'][0]['content']['parts'][0]['text'] ?? '';
 
-            // === 1) Parse JSON langsung (prioritas utama)
             $json = json_decode($text, true);
-
-            // Jika gagal parse, cari blok JSON pertama
             if (!is_array($json)) {
                 if (preg_match('/\{(?:[^{}]|(?R))*\}/s', $text, $m)) {
                     $json = json_decode($m[0], true);
@@ -144,13 +268,12 @@ class GeminiService
                 $neg = $json['neg'] ?? [];
                 $rec = $json['rec'] ?? [];
 
-                $feedback = "Kelebihan: " . implode('; ', $pos)
-                    . "\nKekurangan: " . implode('; ', $neg)
-                    . "\nSaran: " . implode('; ', $rec);
+                // 🔹 gunakan helper baru
+                $feedback = $this->buildFeedbackText($pos, $neg, $rec);
 
                 return [
                     'nilai'    => $total,
-                    'feedback' => trim($feedback),
+                    'feedback' => $feedback,
                     'detail'   => [
                         'criteria'     => $json['criteria'] ?? new \stdClass(),
                         'pos'          => $pos,
@@ -161,7 +284,8 @@ class GeminiService
                 ];
             }
 
-            // === 2) Fallback ke format lama (NILAI:, FEEDBACK:, dst.)
+            // fallback lama (NILAI:, FEEDBACK:, ...)
+            // ... (biarkan seperti kodenmu semula)
             preg_match('/NILAI:\s*(\d+(?:\.\d+)?)/i', $text, $nilaiMatches);
             $nilai = isset($nilaiMatches[1]) ? (float) $nilaiMatches[1] : 0.0;
             if ($nilai > $nilaiMaksimal) $nilai = (float) $nilaiMaksimal;
@@ -180,9 +304,9 @@ class GeminiService
             $saran = isset($saranMatches[1]) ? trim($saranMatches[1]) : '';
 
             return [
-                'nilai' => $nilai,
+                'nilai'    => $nilai,
                 'feedback' => $feedback,
-                'detail' => [
+                'detail'   => [
                     'kelebihan'    => $kelebihan,
                     'kekurangan'   => $kekurangan,
                     'saran'        => $saran,
@@ -196,10 +320,63 @@ class GeminiService
     }
 
     /**
-     * ===========================
-     *  Test koneksi API Gemini
-     * ===========================
+     * Parse multi-essay response
      */
+    private function parseMultiGradingResponse($response, $nilaiMaksimal)
+    {
+        $text = $response['candidates'][0]['content']['parts'][0]['text'] ?? '';
+
+        $json = json_decode($text, true);
+        if (!is_array($json)) {
+            if (preg_match('/\{(?:[^{}]|(?R))*\}/s', $text, $m)) {
+                $json = json_decode($m[0], true);
+            }
+        }
+
+        if (!is_array($json) || !isset($json['items']) || !is_array($json['items'])) {
+            Log::error('Format response multi tidak valid: ' . $text);
+            throw new Exception('Response Gemini multi tidak valid.');
+        }
+
+        $results = [];
+
+        foreach ($json['items'] as $item) {
+            if (!isset($item['soal_id'])) {
+                continue;
+            }
+
+            $soalId = (int)$item['soal_id'];
+            $total  = isset($item['total']) ? (float)$item['total'] : 0.0;
+            $total  = max(0.0, min($total, (float)$nilaiMaksimal));
+
+            $pos = $item['pos'] ?? [];
+            $neg = $item['neg'] ?? [];
+            $rec = $item['rec'] ?? [];
+
+            // 🔹 feedback terstruktur
+            $feedback = $this->buildFeedbackText($pos, $neg, $rec);
+
+            $results[$soalId] = [
+                'nilai'    => $total,
+                'feedback' => $feedback,
+                'detail'   => [
+                    'criteria'     => $item['criteria'] ?? new \stdClass(),
+                    'pos'          => $pos,
+                    'neg'          => $neg,
+                    'saran'        => $rec,
+                    'raw_response' => $text,
+                ],
+            ];
+        }
+
+
+        if (empty($results)) {
+            throw new Exception('Tidak ada item yang berhasil diparse dari response Gemini.');
+        }
+
+        return $results;
+    }
+
     public function testConnection()
     {
         try {

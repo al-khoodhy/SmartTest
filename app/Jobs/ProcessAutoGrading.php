@@ -17,8 +17,15 @@ class ProcessAutoGrading implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $jawabanId;
-    public $tries = 3;
-    public $timeout = 300; // 5 minutes
+
+    // Jumlah maksimum percobaan ulang
+    public $tries = 5;
+
+    // Waktu tunggu (detik) sebelum retry
+    public $backoff = 60; // 1 menit
+
+    // Timeout total job
+    public $timeout = 300; // 5 menit
 
     /**
      * Create a new job instance.
@@ -37,42 +44,51 @@ class ProcessAutoGrading implements ShouldQueue
             $jawaban = JawabanMahasiswa::find($this->jawabanId);
             
             if (!$jawaban) {
-                Log::error('Jawaban not found for auto grading: ' . $this->jawabanId);
+                Log::error("❌ Jawaban tidak ditemukan (ID: {$this->jawabanId})");
                 return;
             }
-            
+
             if ($jawaban->status !== 'submitted') {
-                Log::warning('Jawaban status is not submitted: ' . $this->jawabanId);
+                Log::warning("⚠️ Jawaban status bukan 'submitted' (ID: {$this->jawabanId})");
                 return;
             }
-            
+
             if ($jawaban->penilaian) {
-                Log::warning('Jawaban already graded: ' . $this->jawabanId);
+                Log::info("ℹ️ Jawaban sudah pernah dinilai, lewati (ID: {$this->jawabanId})");
                 return;
             }
-            
-            $penilaian = $autoGradingService->gradeJawaban($jawaban);
-            
-            Log::info('Auto grading job completed successfully for jawaban: ' . $this->jawabanId);
-            
+
+            // Jalankan auto grading (batching + rate limiting di service)
+            $autoGradingService->gradeJawaban($jawaban);
+
+            Log::info("✅ Auto grading selesai untuk jawaban ID: {$this->jawabanId}");
+
         } catch (Exception $e) {
-            Log::error('Auto grading job failed for jawaban ' . $this->jawabanId . ': ' . $e->getMessage());
+
+            // Jika error karena rate limit, tunda dan retry
+            if (str_contains($e->getMessage(), 'Rate limit Gemini tercapai')) {
+                Log::warning("🚦 Rate limit tercapai, menunda job (jawaban_id={$this->jawabanId}) selama {$this->backoff} detik...");
+                $this->release($this->backoff);
+                return;
+            }
+
+            Log::error("💥 Auto grading gagal untuk jawaban {$this->jawabanId}: {$e->getMessage()}");
             throw $e;
         }
     }
-    
+
     /**
-     * Handle a job failure.
+     * Handle a job failure (setelah semua retry gagal).
      */
     public function failed(Exception $exception): void
     {
-        Log::error('Auto grading job failed permanently for jawaban ' . $this->jawabanId . ': ' . $exception->getMessage());
-        
-        // Optionally, you can update the jawaban status or send notification
+        Log::error("❌ Auto grading gagal permanen (ID: {$this->jawabanId}) — {$exception->getMessage()}");
+
         $jawaban = JawabanMahasiswa::find($this->jawabanId);
         if ($jawaban) {
-            // Could add a flag to indicate auto grading failed
-            Log::error('Auto grading failed for jawaban ID: ' . $jawaban->id . ' - Manual grading required');
+            Log::error("🧑‍🏫 Jawaban ID {$jawaban->id} perlu penilaian manual oleh dosen.");
+            // kamu bisa update status misalnya:
+            // $jawaban->update(['status' => 'grading_failed']);
         }
     }
 }

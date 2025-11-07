@@ -264,6 +264,22 @@ class UjianController extends Controller
         // Ambil kelas yang diambil mahasiswa melalui enrollment
         $kelasIds = $mahasiswa->enrollments()->active()->pluck('kelas_id');
         
+        // Cek apakah ada ujian yang sedang berlangsung (status draft dan deadline belum lewat)
+        // Cek semua ujian, tidak hanya yang di-paginate
+        $ujianBerlangsung = JawabanMahasiswa::where('mahasiswa_id', $mahasiswa->id)
+            ->where('status', 'draft')
+            ->whereHas('tugas', function($q) use ($kelasIds) {
+                $q->whereIn('kelas_id', $kelasIds)
+                  ->where('deadline', '>', Carbon::now());
+            })
+            ->with('tugas')
+            ->first();
+        
+        // Jika ada ujian yang sedang berlangsung, redirect otomatis ke halaman work
+        if ($ujianBerlangsung) {
+            return redirect()->route('mahasiswa.ujian.work', $ujianBerlangsung);
+        }
+        
         // Ambil daftar ujian (tugas) berdasarkan kelas
         $ujian = \App\Models\Tugas::whereIn('kelas_id', $kelasIds)
             ->with(['kelas.mataKuliah', 'dosen'])

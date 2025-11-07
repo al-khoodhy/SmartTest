@@ -47,7 +47,7 @@
                                     <td><strong>NIP/NIDN:</strong></td>
                                     <td>{{ $dosen->nim_nip ?? '-' }}</td>
                                 </tr>
-                                <tr>
+                                <!-- <tr>
                                     <td><strong>Status:</strong></td>
                                     <td>
                                         @if($dosen->is_active)
@@ -56,7 +56,7 @@
                                             <span class="badge bg-danger">Tidak Aktif</span>
                                         @endif
                                     </td>
-                                </tr>
+                                </tr> -->
                                 <tr>
                                     <td><strong>Bergabung Sejak:</strong></td>
                                     <td>{{ $dosen->created_at ? $dosen->created_at->format('d F Y') : '-' }}</td>
